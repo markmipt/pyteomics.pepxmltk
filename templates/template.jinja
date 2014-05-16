@@ -11,3 +11,33 @@
    {% for modification in modifications %}
          <aminoacid_modification aminoacid={{ modification.aminoacid }} massdiff={{ modification.massdiff }} mass={{ modification.mass }} variable={{ modification.variable }} />
    {% endfor %}
+
+         <!-- Input parameters -->
+   {% for key, value in input_parameters.iteritems() %}
+         <parameter name={{ key }} value={{ value }}/>
+   {% endfor %}
+         <!-- Unused input parameters -->
+   {% for key, value in unused_input_parameters.iteritems() %}
+         <parameter name={{ key }} value={{ value }}/>
+   {% endfor %}
+         <!-- Performance parameters -->
+   {% for key, value in performance_parameters.iteritems() %}
+         <parameter name={{ key }} value={{ value }}/>
+   {% endfor %}
+      </search_summary>
+    {% for psm in psms %}
+      <spectrum_query spectrum={{ psm.spectrum }} start_scan={{ pms.start_scan }} end_scan={{ psm.end_scan}} precursor_neutral_mass={{ psm.precursor_neutral_mass}} assumed_charge={{ psm.assumed_charge}} index="1">
+      <search_result>
+         <search_hit hit_rank="1" peptide={{ psm.sequence}} peptide_prev_aa={{ psm.peptide_prev_aa }} peptide_next_aa={{ psm.peptide_next_aa }} protein={{ psm.protein }} protein_descr={{ psm.protein_descr }} num_tot_proteins={{ psm.num_tot_proteins }} num_matched_ions={{ pms.num_matched_ions }} tot_num_ions={{ psm.tot_num_ions }} calc_neutral_pep_mass={{ psm.calc_neutral_mass }} massdiff={{ psm.massdiff}} num_tol_term={{ psm.num_tol_term}} num_missed_cleavages={{ psm.num_missed_cleavages}} is_rejected="0">
+         {% for protein in psm.altrenative_proteins %}
+            <alternative_protein protein={{ protein.dbname }} protein_descr={{ protein.descr}} num_tol_term={{ protein.num_tol_term }}/>
+         {% endfor %}
+         {% for score in psm.scores %}
+            <search_score name={{ score.name }} value={{ score.value }}/>
+         {% endfor %}
+         </search_hit>
+      </search_result>
+      </spectrum_query>
+    {% endfor %}
+   </msms_run_summary>
+</msms_pipeline_analysis>
