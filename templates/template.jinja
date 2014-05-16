@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="pepXML_std.xsl"?>
-<msms_pipeline_analysis date={{ input_parameters["process, start time"] }} summary_xml="" xmlns="http://regis-web.systemsbiology.net/pepXML" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://sashimi.sourceforge.net/schema_revision/pepXML/pepXML_v117.xsd">
+<msms_pipeline_analysis date={{ parameters['input parameters']["process, start time"] }} summary_xml="" xmlns="http://regis-web.systemsbiology.net/pepXML" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://sashimi.sourceforge.net/schema_revision/pepXML/pepXML_v117.xsd">
    <msms_run_summary base_name={{ path_to_file }} search_engine="X! Tandem" raw_data_type="raw" raw_data=".?">
       <sample_enzyme name={{ protease.name }}>
 <specificity cut={{ protease.cut }} no_cut={{ protease.no_cut}} sense={{ protease.sense }}/>
 </sample_enzyme>
-<search_summary base_name={{ path_to_file }} search_engine="X! Tandem" precursor_mass_type="monoisotopic" fragment_mass_type={{ input_parameters["spectrum, fragment mass type"] }} search_id="1">
+<search_summary base_name={{ path_to_file }} search_engine="X! Tandem" precursor_mass_type="monoisotopic" fragment_mass_type={{ parameters['input parameters']["spectrum, fragment mass type"] }} search_id="1">
          <search_database local_path={{ performance_parameters["list path, sequence source #1"]}} type="AA"/>
-         <enzymatic_search_constraint enzyme={{ protease.name }} max_num_internal_cleavages={{ input_parameters["scoring, maximum missed cleavage sites"] }} min_number_termini="2" />
+         <enzymatic_search_constraint enzyme={{ protease.name }} max_num_internal_cleavages={{ parameters['input parameters']["scoring, maximum missed cleavage sites"] }} min_number_termini="2" />
    {% for modification in modifications %}
          <aminoacid_modification aminoacid={{ modification.aminoacid }} massdiff={{ modification.massdiff }} mass={{ modification.mass }} variable={{ modification.variable }} />
    {% endfor %}
 
          <!-- Input parameters -->
-   {% for key, value in input_parameters.iteritems() %}
+   {% for key, value in parameters['input parameters'].iteritems() %}
          <parameter name={{ key }} value={{ value }}/>
    {% endfor %}
          <!-- Unused input parameters -->
-   {% for key, value in unused_input_parameters.iteritems() %}
+   {% for key, value in parameters['unused input parameters'].iteritems() %}
          <parameter name={{ key }} value={{ value }}/>
    {% endfor %}
          <!-- Performance parameters -->
-   {% for key, value in performance_parameters.iteritems() %}
+   {% for key, value in parameters['performance parameters'].iteritems() %}
          <parameter name={{ key }} value={{ value }}/>
    {% endfor %}
       </search_summary>
