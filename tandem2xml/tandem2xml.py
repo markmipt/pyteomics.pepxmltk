@@ -46,7 +46,7 @@ class Protease:
                 self.cut, self.no_cut = get_cut(n_term_rule, c_term_rule)
 
 
-def convert(path_to_file):
+def convert(path_to_file, path_to_output):
     parameters = dict()
     params = tandem.iterfind(argv[1], 'group[type=parameters]', recursive=True)
     for param in params:
@@ -57,6 +57,16 @@ def convert(path_to_file):
     template_file = "template.jinja"
     template = templateenv.get_template(template_file)
 
+    templatevars = {'parameters': parameters,
+                    'proteases': proteases,
+                    'path_to_file': path_to_file,
+                    'modifications': [],
+                    'psms': []
+                    }
+    output = open(path_to_output, 'w')
+    output.write(template.render(templatevars))
+
 if __name__ == '__main__':
     from sys import argv
-    convert(argv[1])
+    from os import path
+    convert(path.abspath(argv[1], argv[2]))
