@@ -48,7 +48,7 @@ class Protease:
 
 def convert(path_to_file, path_to_output):
     parameters = dict()
-    params = tandem.iterfind(argv[1], 'group[type="parameters"]', recursive=True)
+    params = tandem.iterfind(path_to_file, 'group[type="parameters"]', recursive=True)
     for param in params:
         parameters[param['label']] = {v['label']: (v['note'] if 'note' in v else "") for v in param['note']}
     proteases = (Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(','))
