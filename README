@@ -1,5 +1,5 @@
 pyteomics.tandem2xml - a pepXML writer and Tandem2XML converter
-===============================================================
+---------------------------------------------------------------
 
 **pyteomics.tandem2xml** is a module based on the
 `pyteomics <http://pythonhosted.org/pyteomics/>`_ package that
