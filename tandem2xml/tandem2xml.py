@@ -69,4 +69,4 @@ def convert(path_to_file, path_to_output):
 if __name__ == '__main__':
     from sys import argv
     from os import path
-    convert(path.abspath(argv[1], argv[2]))
+    convert(path.abspath(argv[1]), path.abspath(argv[2]))
