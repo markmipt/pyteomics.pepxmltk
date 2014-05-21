@@ -37,6 +37,9 @@
          {%- for protein in psm.alternative_proteins %}
             <alternative_protein protein="{{ protein.dbname }}" protein_descr="{{ protein.descr}}" num_tol_term="{{ protein.num_tol_term }}"/>
          {%- endfor %}
+         {%- for modification in psm.modifications %}
+            <mod_aminoacid_mass position="{{ modification.position }}" mass="{{ modification.mass }}" />
+         {%- endfor %}
          {%- for score_name, score_value in psm.scores.iteritems() %}
             <search_score name="{{ score_name }}" value="{{ score_value }}"/>
          {%- endfor %}
