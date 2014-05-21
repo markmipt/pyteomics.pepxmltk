@@ -1,5 +1,6 @@
 from pyteomics import tandem, parser, mass
 from copy import copy
+from collections import OrderedDict
 import jinja2
 
 
@@ -230,7 +231,8 @@ def convert(path_to_file, path_to_output):
     parameters = dict()
     params = tandem.iterfind(path_to_file, 'group[type="parameters"]', recursive=True)
     for param in params:
-        parameters[param['label']] = {v['label']: (v['note'] if 'note' in v else "") for v in param['note']}
+        parameters[param['label']] = OrderedDict(sorted({v['label']: (v['note'] if 'note' in v else "")
+                                                         for v in param['note']}.items(), key=lambda (k, v): k))
     proteases = [Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(',')]
     modifications = Modifications(path_to_file, parameters['input parameters'])
     psms = (Psm(psm_tandem, proteases) for psm_tandem in tandem.read(path_to_file))
