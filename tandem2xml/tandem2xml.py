@@ -242,6 +242,7 @@ def convert(path_to_file, path_to_output):
     templatevars = {'parameters': parameters,
                     'proteases': proteases,
                     'path_to_file': path_to_file,
+                    'path_to_output': path_to_output,
                     'modifications': [m for m in modifications.modifications if m['aminoacid']],
                     'term_modifications': [m for m in modifications.modifications if not m['aminoacid']],
                     'psms': psms
