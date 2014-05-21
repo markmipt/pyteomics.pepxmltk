@@ -139,8 +139,9 @@ class Psm:
         self.protein, self.protein_descr = self.get_protein_info(psm_tandem['protein'][0]['label'])
         self.num_tot_proteins = len(psm_tandem['protein'])
         self.num_matched_ions = sum(v for k, v in psm_tandem['protein'][0]['peptide'].iteritems() if '_ions' in k)
-        self.tot_num_ions = (len(self.sequence) - 1) * \
-                            sum(1 for k in psm_tandem['protein'][0]['peptide'] if '_ions' in k)
+        self.tot_num_ions = (len(self.sequence) - 1) *\
+                            sum(1 for k in psm_tandem['protein'][0]['peptide'] if '_ions' in k) *\
+                            max(self.assumed_charge - 1, 1)
         self.calc_neutral_mass = mass.calculate_mass(self.sequence) \
                                  + sum([mod['modified'] for mod in psm_tandem['protein'][0]['peptide'].get('aa', [])])
         self.massdiff = round(self.precursor_neutral_mass - self.calc_neutral_mass, 6)
