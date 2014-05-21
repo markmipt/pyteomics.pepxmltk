@@ -159,17 +159,22 @@ class Psm:
 
         score_list = ['hyperscore',
                       'nextscore',
-                      'bscore',
-                      'yscore',
-                      'cscore',
-                      'zscore',
-                      'ascore',
-                      'xscore',
-                      'expect']
+                      'b_score',
+                      'y_score',
+                      'c_score',
+                      'z_score',
+                      'a_score',
+                      'x_score',
+                      'expect',
+                      'sumI']
         self.scores = OrderedDict.fromkeys(score_list, 0)
         for k in psm_tandem['protein'][0]['peptide']:
             if k in self.scores:
                 self.scores[k] = psm_tandem['protein'][0]['peptide'][k]
+        self.scores['sumI'] = psm_tandem['sumI']
+        for k, v in self.scores.items():
+            del self.scores[k]
+            self.scores[k.replace('_', '')] = v
 
     def get_modification_info(self, modification):
         position = modification['at'] - self.start + 1
