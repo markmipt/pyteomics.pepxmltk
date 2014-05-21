@@ -126,7 +126,7 @@ class Modifications():
 
 
 class Psm:
-    def __init__(self, psm_tandem):
+    def __init__(self, psm_tandem, proteases):
         self.spectrum = psm_tandem['support']['fragment ion mass spectrum']['note']
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
@@ -143,14 +143,14 @@ class Psm:
         self.calc_neutral_mass = mass.calculate_mass(self.sequence) \
                                  + sum([mod['modified'] for mod in psm_tandem['protein'][0]['peptide'].get('aa', [])])
         self.massdiff = round(self.precursor_neutral_mass - self.calc_neutral_mass, 6)
-        self.num_tol_term = self.calc_num_tol_term()
+        self.num_tol_term = self.calc_num_tol_term(proteases)
         self.num_missed_cleavages = psm_tandem['protein'][0]['peptide']['missed_cleavages']
 
         self.alternative_proteins = []
         for prot in psm_tandem['protein'][1:]:
             alt_protein = dict()
             alt_protein['dbname'], alt_protein['descr'] = self.get_protein_info(prot['label'])
-            alt_protein['num_tol_term'] = self.calc_num_tol_term()
+            alt_protein['num_tol_term'] = self.calc_num_tol_term(proteases)
             self.alternative_proteins.append(alt_protein)
 
         score_list = ['hyperscore',
@@ -167,9 +167,15 @@ class Psm:
             if k in self.scores:
                 self.scores[k] = psm_tandem['protein'][0]['peptide'][k]
 
-    @staticmethod
-    def calc_num_tol_term():  # TODO
-        return 2
+    def calc_num_tol_term(self, proteases):
+        num_tol_term = 0
+        if any(self.sequence[-1] in protease.cut and self.peptide_next_aa not in protease.no_cut
+               for protease in proteases):
+            num_tol_term += 1
+        if any(self.sequence[0] not in protease.no_cut and self.peptide_prev_aa in protease.cut
+               for protease in proteases):
+            num_tol_term += 1
+        return num_tol_term
 
     @staticmethod
     def get_protein_info(protein_label):
@@ -225,9 +231,9 @@ def convert(path_to_file, path_to_output):
     params = tandem.iterfind(path_to_file, 'group[type="parameters"]', recursive=True)
     for param in params:
         parameters[param['label']] = {v['label']: (v['note'] if 'note' in v else "") for v in param['note']}
-    proteases = (Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(','))
+    proteases = [Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(',')]
     modifications = Modifications(path_to_file, parameters['input parameters'])
-    psms = (Psm(psm_tandem) for psm_tandem in tandem.read(path_to_file))
+    psms = (Psm(psm_tandem, proteases) for psm_tandem in tandem.read(path_to_file))
     templateloader = jinja2.FileSystemLoader(searchpath="../templates/")
     templateenv = jinja2.Environment(loader=templateloader)
     template_file = "template.jinja"
