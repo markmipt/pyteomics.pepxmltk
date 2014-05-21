@@ -146,13 +146,16 @@ class Psm:
         self.massdiff = round(self.precursor_neutral_mass - self.calc_neutral_mass, 6)
         self.num_tol_term = self.calc_num_tol_term(proteases)
         self.num_missed_cleavages = psm_tandem['protein'][0]['peptide']['missed_cleavages']
-
+        self.start = psm_tandem['protein'][0]['peptide']['start']
         self.alternative_proteins = []
         for prot in psm_tandem['protein'][1:]:
             alt_protein = dict()
             alt_protein['dbname'], alt_protein['descr'] = self.get_protein_info(prot['label'])
             alt_protein['num_tol_term'] = self.calc_num_tol_term(proteases)
             self.alternative_proteins.append(alt_protein)
+        self.modifications = []
+        for mod in psm_tandem['protein'][0]['peptide'].get('aa', []):
+            self.modifications.append(self.get_modification_info(mod))
 
         score_list = ['hyperscore',
                       'nextscore',
@@ -167,6 +170,11 @@ class Psm:
         for k in psm_tandem['protein'][0]['peptide']:
             if k in self.scores:
                 self.scores[k] = psm_tandem['protein'][0]['peptide'][k]
+
+    def get_modification_info(self, modification):
+        position = modification['at'] - self.start + 1
+        aa = self.sequence[position - 1]
+        return {'position': position, 'mass': mass.std_aa_mass[aa] + modification['modified']}
 
     def calc_num_tol_term(self, proteases):
         num_tol_term = 0
