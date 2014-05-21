@@ -166,7 +166,7 @@ class Psm:
                       'ascore',
                       'xscore',
                       'expect']
-        self.scores = dict.fromkeys(score_list, 0)
+        self.scores = OrderedDict.fromkeys(score_list, 0)
         for k in psm_tandem['protein'][0]['peptide']:
             if k in self.scores:
                 self.scores[k] = psm_tandem['protein'][0]['peptide'][k]
