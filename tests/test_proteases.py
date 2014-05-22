@@ -1,5 +1,5 @@
 import unittest
-from tandem2xml.tandem2xml import *
+from pyteomics.tandem2xml import *
 from pyteomics import parser
 
 
