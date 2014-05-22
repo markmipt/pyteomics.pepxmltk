@@ -106,7 +106,7 @@ class Psm:
         self.spectrum = psm_tandem['support']['fragment ion mass spectrum']['note']
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
-        self.precursor_neutral_mass = psm_tandem['protein'][0]['peptide']['mh'] - mass.calculate_mass('H+')
+        self.precursor_neutral_mass = round(psm_tandem['protein'][0]['peptide']['mh'] - mass.calculate_mass('H+'), 6)
         self.assumed_charge = psm_tandem['z']
         self.sequence = psm_tandem['protein'][0]['peptide']['seq']
         self.peptide_prev_aa = psm_tandem['protein'][0]['peptide']['pre'][-1]
@@ -117,8 +117,9 @@ class Psm:
         self.tot_num_ions = (len(self.sequence) - 1) *\
                             sum(1 for k in psm_tandem['protein'][0]['peptide'] if '_ions' in k) *\
                             max(self.assumed_charge - 1, 1)
-        self.calc_neutral_mass = mass.calculate_mass(self.sequence) \
-                                 + sum([mod['modified'] for mod in psm_tandem['protein'][0]['peptide'].get('aa', [])])
+        self.calc_neutral_mass = round(mass.calculate_mass(self.sequence) \
+                                 + sum([mod['modified']
+                                        for mod in psm_tandem['protein'][0]['peptide'].get('aa', [])]), 6)
         self.massdiff = round(self.precursor_neutral_mass - self.calc_neutral_mass, 6)
         self.num_tol_term = self.calc_num_tol_term(proteases)
         self.num_missed_cleavages = psm_tandem['protein'][0]['peptide']['missed_cleavages']
