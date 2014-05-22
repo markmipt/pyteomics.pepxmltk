@@ -225,7 +225,7 @@ def convert(path_to_file, path_to_output):
     proteases = [Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(',')]
     modifications = Modifications(path_to_file, parameters['input parameters'])
     psms = (Psm(psm_tandem, proteases) for psm_tandem in tandem.read(path_to_file))
-    templateloader = jinja2.FileSystemLoader(searchpath="../templates/")
+    templateloader = jinja2.FileSystemLoader(searchpath="templates/")
     templateenv = jinja2.Environment(loader=templateloader)
     template_file = "template.jinja"
     template = templateenv.get_template(template_file)
