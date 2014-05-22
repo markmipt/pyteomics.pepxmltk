@@ -21,7 +21,6 @@ class Modifications():
 
     @staticmethod
     def get_modification_dict(mod, variable):
-        print mod
         modification = dict()
         modification['massdiff'], modification['aminoacid'] = mod.split('@')
         modification['massdiff'] = float(modification['massdiff'])
