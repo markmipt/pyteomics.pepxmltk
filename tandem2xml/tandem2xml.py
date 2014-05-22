@@ -12,49 +12,43 @@ class Modifications():
         self.variable_mods = []
         self.std_aa_mass['N_term'] = float(input_parameters['protein, cleavage N-terminal mass change'])
         self.std_aa_mass['C_term'] = float(input_parameters['protein, cleavage C-terminal mass change'])
-        for psm_tandem in tandem.read(path_to_file):
-            for mod in psm_tandem['protein'][0]['peptide'].get('aa', []):
-                modification = dict()
-                modification['aminoacid'] = mod['type']
-                modification['massdiff'] = mod['modified']
-
-                if mod['at'] == psm_tandem['protein'][0]['peptide']['start']:
-                    modification['terminus'] = 'N'
-                elif mod['at'] == psm_tandem['protein'][0]['peptide']['end']:
-                    modification['terminus'] = 'C'
-                else:
-                    modification['terminus'] = None
-
-                modification['variable'] = 'Y'
-                if modification not in self.modifications:
-                    self.modifications.append(modification)
         self.get_modifications_from_params(input_parameters)
-        self.variable_info()
-        self.group_terminus()
-        self.remove_dupcated_modifications()
-        self.drop_wrong_terminus()
+        self.info_about_xtandem_term_modifications()
         self.sort_modifications()
         self.change_std_aa_mass()
         self.calculate_modification_masses()
-        self.info_about_xtandem_term_modifications()
         self.add_lowercase_for_term_modifications()
 
+    @staticmethod
+    def get_modification_dict(mod, variable):
+        print mod
+        modification = dict()
+        modification['massdiff'], modification['aminoacid'] = mod.split('@')
+        modification['massdiff'] = float(modification['massdiff'])
+        modification['variable'] = variable
+        if modification['aminoacid'] == '[':
+            modification['terminus'] = 'N'
+            modification['aminoacid'] = None
+        elif modification['aminoacid'] == ']':
+            modification['terminus'] = 'C'
+            modification['aminoacid'] = None
+        else:
+            modification['terminus'] = None
+        modification['close_label'] = ' />'
+        return modification
+
     def get_modifications_from_params(self, input_parameters):
-        for mod in input_parameters['residue, potential modification mass'].split(','):
-            self.variable_mods.append((mod.split('@')))
-        for mod in input_parameters['residue, modification mass'].split(','):
-            self.fixed_mods.append((mod.split('@')))
-        if input_parameters.get('protein, quick acetyl', 'yes') == 'yes':
-            self.variable_mods.append(['42.010565', '['])
-        if input_parameters['refine'] == 'yes':
-            for mod in input_parameters['refine, potential modification mass'].split(',')\
-                    + input_parameters['refine, potential N-terminus modifications'].split(',')\
-                    + input_parameters['refine, potential C-terminus modifications'].split(','):
-                if (mod.split('@')) not in self.variable_mods:
-                    self.variable_mods.append((mod.split('@')))
-            for mod in input_parameters['refine, modification mass'].split(','):
-                if (mod.split('@')) not in self.fixed_mods:
-                    self.fixed_mods.append((mod.split('@')))
+        for mod in set(input_parameters.get('residue, potential modification mass', ',').split(',')
+                + (input_parameters.get('refine, potential modification mass', '').split(',')
+                   if input_parameters.get('refine', 'no') == 'yes' else [])
+                + (['42.010565@['] if input_parameters.get('protein, quick acetyl', 'yes') == 'yes' else [])):
+            if mod:
+                self.modifications.append(self.get_modification_dict(mod, 'Y'))
+        for mod in set(input_parameters.get('residue, modification mass', ',').split(',')
+                + (input_parameters.get('refine, modification mass', '').split(',')
+                   if input_parameters.get('refine', 'no') == 'yes' else [])):
+            if mod:
+                self.modifications.append(self.get_modification_dict(mod, 'N'))
 
     @staticmethod
     def is_equal_modification(modification1, modification2):
@@ -67,6 +61,10 @@ class Modifications():
         elif isinstance(modification2, dict):
             if modification1['aminoacid'] == modification2['aminoacid'] \
                 and modification1['massdiff'] == modification2['massdiff']:
+                return True
+        elif isinstance(modification2, str):
+            if modification1['aminoacid'] == modification2.split('@')[1]\
+                    and round(modification1['massdiff'] - float(modification2.split('@')[0]), 5) == 0:
                 return True
 
     def sort_modifications(self):
@@ -90,35 +88,12 @@ class Modifications():
                                        + (modification['massdiff'] if modification['variable'] == 'Y' else 0), 5)
 
     def info_about_xtandem_term_modifications(self):
-        for modification in self.modifications:
-            if modification['terminus'] and modification['aminoacid']:
-                modification['close_label'] = ' symbol="^" /><!--X! Tandem %s-terminal AA variable modification-->'\
-                                        % (modification['terminus'].lower())
-            else:
-                modification['close_label'] = ' />'
-
-    def remove_dupcated_modifications(self):
-        self.modifications = [dict(t) for t in set([tuple(d.items()) for d in self.modifications])]
-
-    def drop_wrong_terminus(self):
-        for modification_copy in list(self.modifications):
-            if not modification_copy['terminus']:
-                for modification in list(self.modifications):
-                    if modification['terminus'] and self.is_equal_modification(modification_copy, modification):
-                        self.modifications.remove(modification)
-
-    def variable_info(self):
-        for modification in self.modifications:
-            for mod in self.fixed_mods:
-                if self.is_equal_modification(modification, mod):
-                    modification['variable'] = 'N'
-                    break
-
-    def group_terminus(self):
-        for modification in self.modifications:
-            if modification['terminus'] and any(self.is_equal_modification(modification, mod)
-                                                for mod in self.fixed_mods + self.variable_mods):
-                modification['aminoacid'] = None
+        xtandem_nterm_default = ['-17.0265@C', '-18.0106@E', '-17.0265@Q']
+        for mod in xtandem_nterm_default:
+            if not any(self.is_equal_modification(modification, mod) for modification in self.modifications):
+                temp_mod = self.get_modification_dict(mod, 'Y')
+                temp_mod['close_label'] = ' symbol="^" /><!--X! Tandem n-terminal AA variable modification-->'
+                self.modifications.append(temp_mod)
 
     def add_lowercase_for_term_modifications(self):
         for modification in self.modifications:
