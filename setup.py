@@ -27,5 +27,6 @@ setup(
     license          = 'License :: OSI Approved :: Apache Software License',
     packages = ['pyteomics'],
     package_dir = {'pyteomics': 'pyteomics'},
-    package_data={'pyteomics': ['templates/template.jinja']}
+    package_data={'pyteomics': ['templates/template.jinja']},
+    scripts=['pyteomics/scripts/tandem2xml.py', ]
     )

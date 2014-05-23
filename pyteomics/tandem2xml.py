@@ -2,10 +2,11 @@ from pyteomics import tandem, parser, mass
 from copy import copy
 from collections import OrderedDict
 import jinja2
+from os import path
 
 
 class Modifications():
-    def __init__(self, path_to_file, input_parameters):
+    def __init__(self, input_parameters):
         self.modifications = []
         self.std_aa_mass = copy(mass.std_aa_mass)
         self.fixed_mods = []
@@ -217,15 +218,17 @@ class Protease:
 
 
 def convert(path_to_file, path_to_output):
+    path_to_file = path.abspath(path_to_file)
+    path_to_output = path.abspath(path_to_output)
     parameters = dict()
     params = tandem.iterfind(path_to_file, 'group[type="parameters"]', recursive=True)
     for param in params:
         parameters[param['label']] = OrderedDict(sorted({v['label']: (v['note'] if 'note' in v else "")
                                                          for v in param['note']}.items(), key=lambda (k, v): k))
     proteases = [Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(',')]
-    modifications = Modifications(path_to_file, parameters['input parameters'])
+    modifications = Modifications(parameters['input parameters'])
     psms = (Psm(psm_tandem, proteases) for psm_tandem in tandem.read(path_to_file))
-    templateloader = jinja2.FileSystemLoader(searchpath="templates/")
+    templateloader = jinja2.FileSystemLoader(searchpath=path.join(path.dirname(path.abspath(__file__)), "templates/"))
     templateenv = jinja2.Environment(loader=templateloader)
     template_file = "template.jinja"
     template = templateenv.get_template(template_file)
@@ -240,10 +243,3 @@ def convert(path_to_file, path_to_output):
     }
     output = open(path_to_output, 'w')
     output.write(template.render(templatevars))
-
-
-if __name__ == '__main__':
-    from sys import argv
-    from os import path
-
-    convert(path.abspath(argv[1]), path.abspath(argv[2]))
