@@ -223,8 +223,9 @@ def convert(path_to_file, path_to_output):
     parameters = dict()
     params = tandem.iterfind(path_to_file, 'group[type="parameters"]', recursive=True)
     for param in params:
-        parameters[param['label']] = OrderedDict(sorted({v['label']: (v['note'] if 'note' in v else "")
-                                                         for v in param['note']}.items(), key=lambda (k, v): k))
+        parameters[param['label']] = OrderedDict(
+                sorted((v['label'], v['note'] if 'note' in v else "")
+                         for v in param['note']))
     proteases = [Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(',')]
     modifications = Modifications(parameters['input parameters'])
     psms = (Psm(psm_tandem, proteases) for psm_tandem in tandem.read(path_to_file))
