@@ -37,13 +37,13 @@
          {%- for protein in psm.alternative_proteins %}
             <alternative_protein protein="{{ protein.dbname }}" protein_descr="{{ protein.descr}}" num_tol_term="{{ protein.num_tol_term }}"/>
          {%- endfor %}
-         {%- if psm.modifications %}
-            <modification_info>
+         {%- if psm.modifications or psm.mod_label_n or psm.mod_label_c %}
+            <modification_info{{ psm.mod_label }}
          {%- endif %}
          {%- for modification in psm.modifications %}
                <mod_aminoacid_mass position="{{ modification.position }}" mass="{{ modification.mass }}" />
          {%- endfor %}
-         {%- if psm.modifications %}
+         {%- if psm.modifications or psm.mod_label_n or psm.mod_label_c %}
             </modification_info>
          {%- endif %}
          {%- for score_name, score_value in psm.scores.iteritems() %}

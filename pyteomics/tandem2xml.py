@@ -102,7 +102,7 @@ class Modifications():
 
 
 class Psm:
-    def __init__(self, psm_tandem, proteases):
+    def __init__(self, psm_tandem, proteases, mods):
         self.spectrum = psm_tandem['support']['fragment ion mass spectrum']['note']
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
@@ -129,9 +129,13 @@ class Psm:
             alt_protein['num_tol_term'] = self.calc_num_tol_term(proteases)
             self.alternative_proteins.append(alt_protein)
         self.modifications = []
+        self.mod_label_n = ''
+        self.mod_label_c = ''
         for mod in psm_tandem['protein'][0]['peptide'].get('aa', []):
-            self.modifications.append(self.get_modification_info(mod))
-
+            temp_info = self.get_modification_info(mod, mods)
+            if temp_info:
+                self.modifications.append(temp_info)
+        self.mod_label = (' ' + self.mod_label_n + ' ' if self.mod_label_n else '') + self.mod_label_c + '/>'
         score_list = ['hyperscore',
                       'nextscore',
                       'b_score',
@@ -151,10 +155,24 @@ class Psm:
             del self.scores[k]
             self.scores[k.replace('_', '')] = v
 
-    def get_modification_info(self, modification):
+    def get_modification_info(self, modification, mods):
         position = modification['at'] - self.start + 1
         aa = self.sequence[position - 1]
-        return {'position': position, 'mass': mass.std_aa_mass[aa] + modification['modified']}
+        flag = 1
+        if modification['at'] == 1 and abs(modification['modified'] - 42.0106) <= 0.001:
+            self.mod_label_n = 'mod_nterm_mass="43.0184"'
+        for m in mods.modifications:
+            if abs(modification['modified'] - m['massdiff']) <= 0.001:
+                if m['terminus'] == 'N':
+                    self.mod_label_n = 'mod_nterm_mass="%s"' % (m['mass'])
+                    flag = 0
+                elif m['terminus'] == 'C':
+                    self.mod_label_c = 'mod_cterm_mass="%s"' % (m['mass'])
+                    flag = 0
+        if flag:
+            return {'position': position, 'mass': mass.std_aa_mass[aa] + modification['modified']}
+        else:
+            return None
 
     def calc_num_tol_term(self, proteases):
         num_tol_term = 0
@@ -226,7 +244,7 @@ def convert(path_to_file, path_to_output):
                          for v in param['note']))
     proteases = [Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(',')]
     modifications = Modifications(parameters['input parameters'])
-    psms = (Psm(psm_tandem, proteases) for psm_tandem in tandem.read(path_to_file))
+    psms = (Psm(psm_tandem, proteases, modifications) for psm_tandem in tandem.read(path_to_file))
     templateloader = jinja2.FileSystemLoader(searchpath=path.join(path.dirname(path.abspath(__file__)), "templates/"))
     templateenv = jinja2.Environment(loader=templateloader)
     template_file = "template.jinja"
