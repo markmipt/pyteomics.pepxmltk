@@ -135,7 +135,7 @@ class Psm:
             temp_info = self.get_modification_info(mod, mods)
             if temp_info:
                 self.modifications.append(temp_info)
-        self.mod_label = (' ' + self.mod_label_n + ' ' if self.mod_label_n else '') + self.mod_label_c + '/>'
+        self.mod_label = (' ' + self.mod_label_n + ' ' if self.mod_label_n else '') + self.mod_label_c + '>'
         score_list = ['hyperscore',
                       'nextscore',
                       'b_score',
