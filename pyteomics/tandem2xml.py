@@ -110,8 +110,10 @@ class Psm:
         self.assumed_charge = psm_tandem['z']
         self.sequence = psm_tandem['protein'][0]['peptide']['seq']
         self.peptide_prev_aa = psm_tandem['protein'][0]['peptide']['pre'][-1]
+        self.peptide_prev_aa.replace('[', '-')
         self.peptide_next_aa = psm_tandem['protein'][0]['peptide']['post'][0]
-        self.protein, self.protein_descr = self.get_protein_info(psm_tandem['protein'][0]['label'])
+        self.peptide_next_aa.replace(']', '-')
+        self.protein, self.protein_descr = self.get_protein_info(psm_tandem['protein'][0]['note'])
         self.num_tot_proteins = len(psm_tandem['protein'])
         self.num_matched_ions = sum(v for k, v in psm_tandem['protein'][0]['peptide'].iteritems() if '_ions' in k)
         self.tot_num_ions = (len(self.sequence) - 1) *\
@@ -125,7 +127,7 @@ class Psm:
         self.alternative_proteins = []
         for prot in psm_tandem['protein'][1:]:
             alt_protein = dict()
-            alt_protein['dbname'], alt_protein['descr'] = self.get_protein_info(prot['label'])
+            alt_protein['dbname'], alt_protein['descr'] = self.get_protein_info(prot['note'])
             alt_protein['num_tol_term'] = self.calc_num_tol_term(proteases)
             self.alternative_proteins.append(alt_protein)
         self.modifications = []
