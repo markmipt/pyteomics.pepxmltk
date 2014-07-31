@@ -1,4 +1,4 @@
-from pyteomics import tandem, parser, mass
+from pyteomics import tandem, parser, mass, pepxml
 from copy import copy
 from collections import OrderedDict
 import jinja2
@@ -103,7 +103,7 @@ class Modifications():
 
 class Psm:
     def __init__(self, psm_tandem, proteases, mods):
-        self.spectrum = psm_tandem['support']['fragment ion mass spectrum']['note']
+        self.spectrum = psm_tandem['support']['fragment ion mass spectrum']['note'].replace('\n', '')
         self.rt = psm_tandem['rt']
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
@@ -157,6 +157,7 @@ class Psm:
         for k, v in self.scores.items():
             del self.scores[k]
             self.scores[k.replace('_', '')] = v
+
 
     def get_modification_info(self, modification, mods):
         position = modification['at'] - self.start + 1
@@ -236,30 +237,69 @@ class Protease:
             return cut, no_cut
 
 
-def convert(path_to_file, path_to_output):
-    path_to_file = path.abspath(path_to_file)
-    path_to_output = path.abspath(path_to_output)
-    parameters = dict()
-    params = tandem.iterfind(path_to_file, 'group[type="parameters"]', recursive=True)
-    for param in params:
-        parameters[param['label']] = OrderedDict(
-                sorted((v['label'], v['note'] if 'note' in v else "")
-                         for v in param['note']))
-    proteases = [Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(',')]
-    modifications = Modifications(parameters['input parameters'])
-    psms = (Psm(psm_tandem, proteases, modifications) for psm_tandem in tandem.read(path_to_file))
-    templateloader = jinja2.FileSystemLoader(searchpath=path.join(path.dirname(path.abspath(__file__)), "templates/"))
-    templateenv = jinja2.Environment(loader=templateloader)
-    template_file = "template.jinja"
-    template = templateenv.get_template(template_file)
+def easy_write_pepxml(input_files, path_to_output, valid_psms):
+    unlocked = True
+    if path_to_output in input_files:
+        tmp_lines = open(path_to_output, 'r').readlines()
+    output_file = open(path_to_output, 'w')
+    for infile in input_files:
+        if infile != path_to_output:
+            input_file = open(infile, 'r')
+            lines = input_file.readlines()
+            input_file.close()
+        else:
+            lines = tmp_lines
+        for line in lines:
+            if line.startswith('      <spectrum_query'):
+                if line.split('spectrum="')[1].split('" ')[0] not in valid_psms:
+                    unlocked = False
+                else:
+                    unlocked = True
+            if unlocked:
+                output_file.write(line)
+            if '</spectrum_query>' in line:
+                unlocked = True
+        unlocked = False
+    output_file.close()
 
-    templatevars = {'parameters': parameters,
-                    'proteases': proteases,
-                    'path_to_file': path_to_file,
-                    'path_to_output': path_to_output,
-                    'modifications': [m for m in modifications.modifications if m['aminoacid']],
-                    'term_modifications': [m for m in modifications.modifications if not m['aminoacid']],
-                    'psms': psms
-    }
-    output = open(path_to_output, 'w')
-    output.write(template.render(templatevars))
+
+def convert(files, path_to_output, fdr=None):
+    if path.splitext(path.splitext(files[0])[0])[-1] == '.t':
+        for idx, path_to_file in enumerate(files):
+            if idx == 0:
+                path_to_file = path.abspath(path_to_file)
+                path_to_output = path.abspath(path_to_output)
+                parameters = dict()
+                params = tandem.iterfind(path_to_file, 'group[type="parameters"]', recursive=True)
+                for param in params:
+                    parameters[param['label']] = OrderedDict(
+                            sorted((v['label'], v['note'] if 'note' in v else "")
+                                     for v in param['note']))
+                proteases = [Protease(rule) for rule in parameters['input parameters']['protein, cleavage site'].split(',')]
+                modifications = Modifications(parameters['input parameters'])
+                psms = []
+            psms.extend((Psm(psm_tandem, proteases, modifications) for psm_tandem in tandem.read(path_to_file)))
+        templateloader = jinja2.FileSystemLoader(searchpath=path.join(path.dirname(path.abspath(__file__)), "templates/"))
+        templateenv = jinja2.Environment(loader=templateloader)
+        template_file = "template.jinja"
+        template = templateenv.get_template(template_file)
+
+        templatevars = {'parameters': parameters,
+                        'proteases': proteases,
+                        'path_to_file': path_to_file,
+                        'path_to_output': path_to_output,
+                        'modifications': [m for m in modifications.modifications if m['aminoacid']],
+                        'term_modifications': [m for m in modifications.modifications if not m['aminoacid']],
+                        'psms': psms
+        }
+        output = open(path_to_output, 'w')
+        output.write(template.render(templatevars))
+        output.close()
+        input_files = (path_to_output, )
+    else:
+        input_files = files
+    if fdr:
+        psms = set()
+        for infile in input_files:
+            psms.update(psm['spectrum'] for psm in next(pepxml.filter(infile, fdr=1.0).gen))
+        easy_write_pepxml(input_files, path_to_output, psms)
