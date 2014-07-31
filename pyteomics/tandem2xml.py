@@ -104,7 +104,10 @@ class Modifications():
 class Psm:
     def __init__(self, psm_tandem, proteases, mods):
         self.spectrum = psm_tandem['support']['fragment ion mass spectrum']['note'].replace('\n', '')
-        self.rt = psm_tandem['rt']
+        try:
+            self.rt = float(psm_tandem['rt'])
+        except:
+            self.rt = 0
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.precursor_neutral_mass = round(psm_tandem['mh'] - mass.calculate_mass('H+'), 6)
