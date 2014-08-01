@@ -1,5 +1,5 @@
 #! python
-from pyteomics.tandem2xml import convert
+from pyteomics.pepxmltk import convert
 from os import path
 from sys import argv
 
