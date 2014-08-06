@@ -11,7 +11,7 @@ version = open('VERSION').readline().strip()
 setup(
     name = 'pyteomics.pepxmltk',
     version = version,
-    description      = '''A converter for tandem .t.xml files to .pep.xml format.''',
+    description      = '''A utility for creation of pepXML files from Python objects and TandemXML files.''',
     long_description = (''.join(open('README').readlines())),
     author           = 'Mark Ivanov & Lev Levitsky',
     author_email     = 'pyteomics@googlegroups.com',
