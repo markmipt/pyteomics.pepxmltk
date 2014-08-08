@@ -304,5 +304,5 @@ def convert(files, path_to_output, fdr=None):
     if fdr:
         psms = set()
         for infile in input_files:
-            psms.update(psm['spectrum'] for psm in next(pepxml.filter(infile, fdr=1.0).gen))
+            psms.update(psm['spectrum'] for psm in next(pepxml.filter(infile, fdr=fdr).gen))
         easy_write_pepxml(input_files, path_to_output, psms)
