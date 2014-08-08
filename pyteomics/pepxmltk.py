@@ -240,7 +240,7 @@ class Protease:
             return cut, no_cut
 
 
-def easy_write_pepxml(input_files, path_to_output, valid_psms):
+def easy_write_pepxml(input_files, path_to_output, valid_psms=None):
     unlocked = True
     if path_to_output in input_files:
         tmp_lines = open(path_to_output, 'r').readlines()
@@ -254,7 +254,7 @@ def easy_write_pepxml(input_files, path_to_output, valid_psms):
             lines = tmp_lines
         for line in lines:
             if line.startswith('      <spectrum_query'):
-                if line.split('spectrum="')[1].split('" ')[0] not in valid_psms:
+                if valid_psms and line.split('spectrum="')[1].split('" ')[0] not in valid_psms:
                     unlocked = False
                 else:
                     unlocked = True
@@ -306,3 +306,6 @@ def convert(files, path_to_output, fdr=None):
         for infile in input_files:
             psms.update(psm['spectrum'] for psm in next(pepxml.filter(infile, fdr=fdr).gen))
         easy_write_pepxml(input_files, path_to_output, psms)
+    elif len(input_files) > 1:
+        easy_write_pepxml(input_files, path_to_output, None)
+
