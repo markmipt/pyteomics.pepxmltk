@@ -9,7 +9,7 @@ from distutils.core import setup
 version = open('VERSION').readline().strip()
 
 setup(
-    name = 'pyteomics.tandem2xml',
+    name = 'pyteomics.pepxmltk',
     version = version,
     description      = '''A converter for tandem .t.xml files to .pep.xml format.''',
     long_description = (''.join(open('README').readlines())),
@@ -28,5 +28,5 @@ setup(
     packages = ['pyteomics'],
     package_dir = {'pyteomics': 'pyteomics'},
     package_data={'pyteomics': ['templates/template.jinja']},
-    scripts=['pyteomics/scripts/tandem2xml.py', ]
+    scripts=['pyteomics/scripts/pepxmltk.py', ]
     )
