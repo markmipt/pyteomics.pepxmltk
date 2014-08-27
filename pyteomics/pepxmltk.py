@@ -34,7 +34,6 @@ class Modifications():
             modification['aminoacid'] = None
         else:
             modification['terminus'] = None
-        modification['close_label'] = ' />'
         return modification
 
     def get_modifications_from_params(self, input_parameters):
@@ -92,7 +91,6 @@ class Modifications():
         for mod in xtandem_nterm_default:
             if not any(self.is_equal_modification(modification, mod) for modification in self.modifications):
                 temp_mod = self.get_modification_dict(mod, 'Y')
-                temp_mod['close_label'] = ' symbol="^" /><!--X! Tandem n-terminal AA variable modification-->'
                 self.modifications.append(temp_mod)
 
     def add_lowercase_for_term_modifications(self):
@@ -141,7 +139,7 @@ class Psm:
             temp_info = self.get_modification_info(mod, mods)
             if temp_info:
                 self.modifications.append(temp_info)
-        self.mod_label = (' ' + self.mod_label_n + ' ' if self.mod_label_n else '') + self.mod_label_c + '>'
+        self.mod_label = (' ' + self.mod_label_n + ' ' if self.mod_label_n else '') + self.mod_label_c
         score_list = ['hyperscore',
                       'nextscore',
                       'b_score',
@@ -283,7 +281,7 @@ def convert(files, path_to_output, fdr=None):
                 psms = []
             psms.extend((Psm(psm_tandem, proteases, modifications) for psm_tandem in tandem.read(path_to_file)))
         templateloader = jinja2.FileSystemLoader(searchpath=path.join(path.dirname(path.abspath(__file__)), "templates/"))
-        templateenv = jinja2.Environment(loader=templateloader)
+        templateenv = jinja2.Environment(loader=templateloader, autoescape=True, extensions=['jinja2.ext.autoescape'])
         template_file = "template.jinja"
         template = templateenv.get_template(template_file)
 
