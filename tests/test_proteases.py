@@ -1,5 +1,5 @@
 import unittest
-from pyteomics.tandem2xml import *
+from pyteomics.pepxmltk import *
 from pyteomics import parser
 
 
