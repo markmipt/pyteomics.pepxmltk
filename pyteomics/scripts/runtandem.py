@@ -9,7 +9,7 @@ import subprocess
 import argparse
 
 tandem = r'tandem.exe'
-#tandem2xml = r'Tandem2XML'
+tandem2xml = r'tandem2xml.py'
 
 def inputxml(path, params):
     with open(path, 'w') as inputxml:
@@ -44,10 +44,12 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
         if len(splist) > 1:
             return runtandem(folder, params, db, splist, convert, overwrite)
         elif splist:
-            params["spectrum, path"] = splist[0]
-
-    if os.path.exists(params):
-        params = build_dict(params)
+            if os.path.exists(params):
+                params = build_dict(params)
+                params["spectrum, path"] = splist[0]
+            else:
+                print('Could not load input file from %.' % params)
+                return
     else:
         print("Could not find the input file %s" % params)
         return
