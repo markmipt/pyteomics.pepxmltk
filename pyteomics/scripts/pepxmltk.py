@@ -5,11 +5,17 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('files', nargs='*', help='list of pepXML or tXML files')
-parser.add_argument('-o', required=True, help='path to output file')
-parser.add_argument('-f', default=None, help='fdr, %%')
-args =  parser.parse_args()
+parser.add_argument('-o', help='path to output file')
+parser.add_argument('-f', default=1.0, help='fdr, %%')
+args = parser.parse_args()
 
 fdr = args.f
 if fdr:
     fdr /= 100
-convert(args.files, path.abspath(args.o), fdr=fdr)
+if args.o:
+    convert(args.files, path.abspath(args.o), fdr=fdr)
+elif not any(path.splitext(path.splitext(filename)[0])[-1] == '.pep' for filename in args.files):
+    for filename in args.files:
+        convert((path.abspath(filename), ), path.abspath(filename).split('.t.xml')[0] + '.pep.xml', fdr=fdr)
+else:
+    convert(args.files[:-1], path.abspath(args.files[-1]), fdr=fdr)
