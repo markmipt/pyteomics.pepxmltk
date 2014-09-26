@@ -34,7 +34,6 @@ class Modifications():
             modification['aminoacid'] = None
         else:
             modification['terminus'] = None
-        modification['close_label'] = ' />'
         return modification
 
     def get_modifications_from_params(self, input_parameters):
@@ -92,7 +91,6 @@ class Modifications():
         for mod in xtandem_nterm_default:
             if not any(self.is_equal_modification(modification, mod) for modification in self.modifications):
                 temp_mod = self.get_modification_dict(mod, 'Y')
-                temp_mod['close_label'] = ' symbol="^" /><!--X! Tandem n-terminal AA variable modification-->'
                 self.modifications.append(temp_mod)
 
     def add_lowercase_for_term_modifications(self):
@@ -141,7 +139,7 @@ class Psm:
             temp_info = self.get_modification_info(mod, mods)
             if temp_info:
                 self.modifications.append(temp_info)
-        self.mod_label = (' ' + self.mod_label_n + ' ' if self.mod_label_n else '') + self.mod_label_c + '>'
+        self.mod_label = (' ' + self.mod_label_n + ' ' if self.mod_label_n else '') + self.mod_label_c
         score_list = ['hyperscore',
                       'nextscore',
                       'b_score',
@@ -240,7 +238,7 @@ class Protease:
             return cut, no_cut
 
 
-def easy_write_pepxml(input_files, path_to_output, valid_psms):
+def easy_write_pepxml(input_files, path_to_output, valid_psms=None):
     unlocked = True
     if path_to_output in input_files:
         tmp_lines = open(path_to_output, 'r').readlines()
@@ -254,7 +252,7 @@ def easy_write_pepxml(input_files, path_to_output, valid_psms):
             lines = tmp_lines
         for line in lines:
             if line.startswith('      <spectrum_query'):
-                if line.split('spectrum="')[1].split('" ')[0] not in valid_psms:
+                if valid_psms and line.split('spectrum="')[1].split('" ')[0] not in valid_psms:
                     unlocked = False
                 else:
                     unlocked = True
@@ -283,7 +281,7 @@ def convert(files, path_to_output, fdr=None):
                 psms = []
             psms.extend((Psm(psm_tandem, proteases, modifications) for psm_tandem in tandem.read(path_to_file)))
         templateloader = jinja2.FileSystemLoader(searchpath=path.join(path.dirname(path.abspath(__file__)), "templates/"))
-        templateenv = jinja2.Environment(loader=templateloader)
+        templateenv = jinja2.Environment(loader=templateloader, autoescape=True, extensions=['jinja2.ext.autoescape'])
         template_file = "template.jinja"
         template = templateenv.get_template(template_file)
 
@@ -304,5 +302,8 @@ def convert(files, path_to_output, fdr=None):
     if fdr:
         psms = set()
         for infile in input_files:
-            psms.update(psm['spectrum'] for psm in next(pepxml.filter(infile, fdr=1.0).gen))
+            psms.update(psm['spectrum'] for psm in next(pepxml.filter(infile, fdr=fdr).gen))
         easy_write_pepxml(input_files, path_to_output, psms)
+    elif len(input_files) > 1:
+        easy_write_pepxml(input_files, path_to_output, None)
+
