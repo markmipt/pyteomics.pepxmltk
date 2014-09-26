@@ -6,7 +6,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('files', nargs='*', help='list of pepXML or tXML files')
 parser.add_argument('-o', help='path to output file')
-parser.add_argument('-f', default=1.0, help='fdr, %%')
+parser.add_argument('-f', default=None, help='fdr, %%')
 args = parser.parse_args()
 
 fdr = args.f
