@@ -14,8 +14,10 @@ if fdr:
     fdr /= 100
 if args.o:
     convert(args.files, path.abspath(args.o), fdr=fdr)
-elif not any(path.splitext(path.splitext(filename)[0])[-1] == '.pep' for filename in args.files):
+elif not any(path.splitext(path.splitext(filename)[0])[-1] == '.pep'
+        for filename in args.files):
     for filename in args.files:
-        convert((path.abspath(filename), ), path.abspath(filename).split('.t.xml')[0] + '.pep.xml', fdr=fdr)
+        convert((path.abspath(filename), ),
+                path.abspath(filename).split('.t.xml')[0] + '.pep.xml', fdr=fdr)
 else:
     convert(args.files[:-1], path.abspath(args.files[-1]), fdr=fdr)
