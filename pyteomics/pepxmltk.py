@@ -321,14 +321,6 @@ def convert(files, path_to_output, fdr=None):
                 psms = []
             psms.extend((Psm(psm_tandem, proteases, modifications)
                 for psm_tandem in tandem.read(path_to_file)))
-        templateloader = jinja2.FileSystemLoader(
-                searchpath=path.join(
-                    path.dirname(path.abspath(__file__)), "templates/"))
-        templateenv = jinja2.Environment(loader=templateloader, autoescape=True,
-                extensions=['jinja2.ext.autoescape'])
-        template_file = "template.jinja"
-        template = templateenv.get_template(template_file)
-
         templatevars = {'parameters': parameters,
                         'proteases': proteases,
                         'path_to_file': path_to_file,
@@ -339,9 +331,7 @@ def convert(files, path_to_output, fdr=None):
                             modifications.modifications if not m['aminoacid']],
                         'psms': psms
         }
-        output = open(path_to_output, 'w')
-        output.write(template.render(templatevars))
-        output.close()
+        write_template(**templatevars)
         input_files = (path_to_output, )
     else:
         input_files = files
@@ -353,4 +343,16 @@ def convert(files, path_to_output, fdr=None):
         easy_write_pepxml(input_files, path_to_output, psms)
     elif len(input_files) > 1:
         easy_write_pepxml(input_files, path_to_output, None)
+
+def write_template(**template_vars):
+    templateloader = jinja2.FileSystemLoader(
+            searchpath=path.join(
+                path.dirname(path.abspath(__file__)), "templates/"))
+    templateenv = jinja2.Environment(loader=templateloader, autoescape=True,
+            extensions=['jinja2.ext.autoescape'])
+    template_file = "template.jinja"
+    template = templateenv.get_template(template_file)
+
+    with open(template_vars['path_to_output'], 'w') as output:
+        output.write(template.render(template_vars))
 
