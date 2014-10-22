@@ -187,9 +187,8 @@ class Psm:
             if k in self.scores:
                 self.scores[k] = psm_tandem['protein'][0]['peptide'][k]
         self.scores['sumI'] = psm_tandem['sumI']
-        for k, v in self.scores.items():
-            del self.scores[k]
-            self.scores[k.replace('_', '')] = v
+        for k, v in self.scores.copy().items():
+            self.scores[k.replace('_', '')] = self.scores.pop(k)
 
 
     def get_modification_info(self, modification, mods):
