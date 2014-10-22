@@ -18,15 +18,15 @@
    {%- endfor %}
 
          <!-- Input parameters -->
-   {%- for key, value in parameters['input parameters'].iteritems() %}
+   {%- for key, value in parameters['input parameters'].items() %}
          <parameter name="{{ key }}" value="{{ value }}"/>
    {%- endfor %}
          <!-- Unused input parameters -->
-   {%- for key, value in parameters['unused input parameters'].iteritems() %}
+   {%- for key, value in parameters['unused input parameters'].items() %}
          <parameter name="{{ key }}" value="{{ value }}"/>
    {%- endfor %}
          <!-- Performance parameters -->
-   {%- for key, value in parameters['performance parameters'].iteritems() %}
+   {%- for key, value in parameters['performance parameters'].items() %}
          <parameter name="{{ key }}" value="{{ value }}"/>
    {%- endfor %}
       </search_summary>
@@ -46,7 +46,7 @@
          {%- if psm.modifications or psm.mod_label_n or psm.mod_label_c %}
             </modification_info>
          {%- endif %}
-         {%- for score_name, score_value in psm.scores.iteritems() %}
+         {%- for score_name, score_value in psm.scores.items() %}
             <search_score name="{{ score_name }}" value="{{ score_value }}"/>
          {%- endfor %}
          </search_hit>
