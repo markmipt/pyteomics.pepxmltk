@@ -170,8 +170,7 @@ class Psm:
             temp_info = self.get_modification_info(mod, mods)
             if temp_info:
                 self.modifications.append(temp_info)
-        self.mod_label = (' ' + self.mod_label_n +
-                ' ' if self.mod_label_n else '') + self.mod_label_c
+        self.mod_label = ((' ' + self.mod_label_n) if self.mod_label_n else '') + ((' ' + self.mod_label_c) if self.mod_label_c else '')
         score_list = ['hyperscore',
                       'nextscore',
                       'b_score',
@@ -204,7 +203,7 @@ class Psm:
                     self.mod_label_n = 'mod_nterm_mass="%s"' % (m['mass'])
                     flag = 0
                 elif m['terminus'] == 'C':
-                    self.mod_label_c = 'mod_cterm_mass="%s"' % (m['mass'])
+                    self.mod_label_c = ' mod_cterm_mass="%s"' % (m['mass'])
                     flag = 0
         if flag:
             return {'position': position,
