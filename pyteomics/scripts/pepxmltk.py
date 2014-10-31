@@ -11,7 +11,7 @@ args = parser.parse_args()
 
 fdr = args.f
 if fdr:
-    fdr /= 100
+    fdr = float(fdr) / 100
 if args.o:
     convert(args.files, path.abspath(args.o), fdr=fdr)
 elif not any(path.splitext(path.splitext(filename)[0])[-1] == '.pep'
