@@ -225,7 +225,10 @@ class Psm:
 
     @staticmethod
     def get_protein_info(protein_label):
-        return protein_label.split(' ', 1)
+        try:
+            return protein_label.split(' ', 1)
+        except:
+            return protein_label, ''
 
 
 class Protease:
