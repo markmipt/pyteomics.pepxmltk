@@ -225,9 +225,9 @@ class Psm:
 
     @staticmethod
     def get_protein_info(protein_label):
-        try:
+        if len(protein_label.split(' ', 1)) == 2:
             return protein_label.split(' ', 1)
-        except:
+        else:
             return protein_label, ''
 
 
