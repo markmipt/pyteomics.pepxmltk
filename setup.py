@@ -29,5 +29,5 @@ setup(
     packages = ['pyteomics'],
     package_dir = {'pyteomics': 'pyteomics'},
     package_data={'pyteomics': ['templates/template.jinja']},
-    scripts=['pyteomics/scripts/pepxmltk.py', ]
+    scripts=['pyteomics/scripts/pepxmltk.py', 'pyteomics/scripts/runtandem.py']
     )
