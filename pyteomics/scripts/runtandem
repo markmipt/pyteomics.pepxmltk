@@ -87,7 +87,8 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
     if convert:
         logging.info("Converting results...")
         pepxml_file = txml.rsplit('.t.xml', 1)[0] + '.pep.xml'
-        if not subprocess.call([tandem2xml, txml, pepxml_file]):
+        if not subprocess.call([tandem2xml, txml, pepxml_file],
+                stderr=tandemout, stdout=tandemout):
             logging.info("Task finished. The results are at {}.".format(pepxml_file))
             return pepxml_file
         else:
