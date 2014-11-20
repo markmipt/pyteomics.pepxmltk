@@ -67,36 +67,37 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
         for line in fi:
             logging.debug(line.rstrip())
     logging.info("Running X!Tandem...")
-    tandemout = (sys.stderr if
-            logging.getLogger().getEffectiveLevel() > logging.INFO
-        else os.devnull)
-    subprocess.call([tandem, inp], stdout=tandemout)
-    logging.info("Collecting results...")
-    outs = glob(os.path.join(folder, "output*t.xml"))
-    out = [os.path.split(f)[1] for f in outs]
-    out.sort()
-    namestub = os.path.split(spectra)[1].rsplit('.', 1)[0]
-    txml_name =  namestub + '.t.xml'
-    txml = os.path.join(folder, txml_name)
-    if not overwrite:
-        i = 1
-        while os.path.isfile(txml):
-            txml = os.path.join(folder, '{}_{}.t.xml'.format(namestub, i))
-            i += 1
-    move(os.path.join(folder, out[-1]), txml)
-    if convert:
-        logging.info("Converting results...")
-        pepxml_file = txml.rsplit('.t.xml', 1)[0] + '.pep.xml'
-        if not subprocess.call([tandem2xml, txml, pepxml_file],
-                stderr=tandemout, stdout=tandemout):
-            logging.info("Task finished. The results are at {}.".format(pepxml_file))
-            return pepxml_file
+    with open(os.devnull, 'w') as devnull:
+        tandemout = (sys.stderr if
+            logging.getLogger().getEffectiveLevel() < logging.INFO
+            else devnull)
+        subprocess.check_call([tandem, inp], stdout=tandemout)
+        logging.info("Collecting results...")
+        outs = glob(os.path.join(folder, "output*t.xml"))
+        out = [os.path.split(f)[1] for f in outs]
+        out.sort()
+        namestub = os.path.split(spectra)[1].rsplit('.', 1)[0]
+        txml_name =  namestub + '.t.xml'
+        txml = os.path.join(folder, txml_name)
+        if not overwrite:
+            i = 1
+            while os.path.isfile(txml):
+                txml = os.path.join(folder, '{}_{}.t.xml'.format(namestub, i))
+                i += 1
+        move(os.path.join(folder, out[-1]), txml)
+        if convert:
+            logging.info("Converting results...")
+            pepxml_file = txml.rsplit('.t.xml', 1)[0] + '.pep.xml'
+            if not subprocess.call([tandem2xml, txml, pepxml_file],
+                    stderr=tandemout, stdout=tandemout):
+                logging.info("Task finished. The results are at {}.".format(pepxml_file))
+                return pepxml_file
+            else:
+                logging.error("Conversion failed.")
+                return txml
         else:
-            logging.error("Conversion failed.")
+            logging.info("Task finished. The results are at {}.".format(txml))
             return txml
-    else:
-        logging.info("Task finished. The results are at {}.".format(txml))
-        return txml
 
 def build_dict(xml):
     params = {}
