@@ -94,7 +94,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
             logging.error("Conversion failed.")
             return txml
     else:
-        loging.info("Task finished. The results are at {}.".format(txml))
+        logging.info("Task finished. The results are at {}.".format(txml))
         return txml
 
 def build_dict(xml):
