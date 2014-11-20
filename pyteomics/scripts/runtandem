@@ -1,5 +1,4 @@
 #! python
-from __future__ import print_function
 from lxml import etree
 import sys
 import os
@@ -7,6 +6,7 @@ from glob import glob
 from shutil import move
 import subprocess
 import argparse
+import logging
 
 tandem = os.environ.get('TANDEMEXE')
 tandem2xml = os.environ.get('TANDEM2XML')
@@ -38,9 +38,9 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
             for s in spectra
             ]
     elif isinstance(spectra, str):
-        print("runtandem: searching files by mask %s..." % spectra)
+        logging.info("runtandem: searching files by mask %s..." % spectra)
         splist = glob(spectra)
-        print(len(splist), "file(s) found.")
+        logging.info("{} file(s) found.".format(len(splist)))
         if len(splist) > 1:
             return runtandem(folder, params, db, splist, convert, overwrite)
         elif splist:
@@ -48,25 +48,30 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
                 params = build_dict(params)
                 params["spectrum, path"] = splist[0]
             else:
-                print('Could not load input file from %.' % params)
+                logging.error('Could not load input file from %.' % params)
                 return
     else:
-        print("Could not find the input file %s" % params)
+        logging.error("Could not find the input file %s" % params)
         return
 
     if not os.path.isdir(folder):
-        print("Creating %s..." % folder)
+        logging.info("Creating %s..." % folder)
         os.makedirs(folder)
     params["list path, taxonomy information"] = taxonomy_xml(
             db, os.path.join(folder, "taxonomy.xml"), "python")
     params["protein, taxon"] = "python"
     params["output, path"] = os.path.join(folder, "output.xml")
     inp = inputxml(os.path.join(folder, "input.xml"), params)
-    print("Using the following parameters:")
-    print(open(inp).read())
-    print("Running X!Tandem...")
-    subprocess.call([tandem, inp], stdout=sys.stderr)
-    print("Collecting results...")
+    logging.debug("Using the following parameters:")
+    with open(inp) as fi:
+        for line in fi:
+            logging.debug(line.rstrip())
+    logging.info("Running X!Tandem...")
+    tandemout = (sys.stderr if
+            logging.getLogger().getEffectiveLevel() > logging.INFO
+        else os.devnull)
+    subprocess.call([tandem, inp], stdout=tandemout)
+    logging.info("Collecting results...")
     outs = glob(os.path.join(folder, "output*t.xml"))
     out = [os.path.split(f)[1] for f in outs]
     out.sort()
@@ -80,16 +85,16 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
             i += 1
     move(os.path.join(folder, out[-1]), txml)
     if convert:
-        print("Converting results...")
+        logging.info("Converting results...")
         pepxml_file = txml.rsplit('.t.xml', 1)[0] + '.pep.xml'
         if not subprocess.call([tandem2xml, txml, pepxml_file]):
-            print("Task finished. The results are at {}.".format(pepxml_file))
+            logging.info("Task finished. The results are at {}.".format(pepxml_file))
             return pepxml_file
         else:
-            print("Conversion failed.")
+            logging.error("Conversion failed.")
             return txml
     else:
-        print("Task finished. The results are at {}.".format(txml))
+        loging.info("Task finished. The results are at {}.".format(txml))
         return txml
 
 def build_dict(xml):
@@ -120,24 +125,30 @@ if __name__ == "__main__":
             help='X!Tandem executable')
     parser.add_argument('--tandem2xml', metavar='FILE',
             help='Tandem2XML converter executable')
+    parser.add_argument('-v', '--verbosity', action='count', default=0,
+            help='Increase output verbosity')
 
+    levels = [logging.ERROR, logging.INFO, logging.DEBUG]
     args = parser.parse_args()
-    print("Starting runtandem...")
+    level = 2 if args.verbosity > 2 else args.verbosity
+    logging.basicConfig(format='%(levelname)5s: %(asctime)s %(message)s',
+            datefmt='[%H:%M:%S]', level=levels[level])
 
-    if args.db is not None and not os.path.exists(args.db):
-        print("Could not find the database %s" % args.db)
-        sys.exit(1)
-
+    logging.info("Starting runtandem...")
     spectra = args.spectra or None
     tandem = args.tandem or tandem
     tandem2xml = args.tandem2xml or tandem2xml
     if tandem is None:
-        print("X!Tandem executable not specified."
+        logging.error("X!Tandem executable not specified. "
                 "Use --tandem.exe or set the TANDEMEXE variable")
         sys.exit(2)
     if args.convert and tandem2xml is None:
-        print("Tandem2XML command or executable not specified."
+        logging.error("Tandem2XML command or executable not specified. "
                 "Use --tandem2xml or set the TANDEM2XML variable")
         sys.exit(2)
+    if args.db is not None and not os.path.exists(args.db):
+        logging.error("Could not find the database %s" % args.db)
+        sys.exit(1)
+
     runtandem(args.dir, args.input, args.db, spectra,
                 args.convert, args.overwrite)
