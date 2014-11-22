@@ -48,7 +48,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
                 params = build_dict(params)
                 params["spectrum, path"] = splist[0]
             else:
-                logging.error('Could not load input file from %.' % params)
+                logging.error('Could not load input file from %s.' % params)
                 return
     else:
         logging.error("Could not find the input file %s" % params)
