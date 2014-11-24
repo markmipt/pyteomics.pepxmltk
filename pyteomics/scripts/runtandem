@@ -38,7 +38,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
             for s in spectra
             ]
     elif isinstance(spectra, str):
-        logging.info("runtandem: searching files by mask %s..." % spectra)
+        logging.info("runtandem: searching files by mask %s...", spectra)
         splist = glob(spectra)
         logging.info("{} file(s) found.".format(len(splist)))
         if len(splist) > 1:
@@ -50,8 +50,11 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
             else:
                 logging.error('Could not load input file from %s.' % params)
                 return
+        else:
+            logging.error('Nothing to process.')
+            return
     else:
-        logging.error("Could not find the input file %s" % params)
+        logging.error("Could not find the input file %s", params)
         return
 
     if not os.path.isdir(folder):
@@ -71,7 +74,10 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
         tandemout = (sys.stderr if
             logging.getLogger().getEffectiveLevel() < logging.INFO
             else devnull)
-        subprocess.check_call([tandem, inp], stdout=tandemout)
+        code = subprocess.call([tandem, inp], stdout=tandemout)
+        if code:
+            logging.error('Search failed for file %s (exit code %s)', spectra, code)
+            return code
         logging.info("Collecting results...")
         outs = glob(os.path.join(folder, "output*t.xml"))
         out = [os.path.split(f)[1] for f in outs]
@@ -93,7 +99,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
                 logging.info("Task finished. The results are at {}.".format(pepxml_file))
                 return pepxml_file
             else:
-                logging.error("Conversion failed.")
+                logging.error("Conversion failed for file %s", spectra)
                 return txml
         else:
             logging.info("Task finished. The results are at {}.".format(txml))
