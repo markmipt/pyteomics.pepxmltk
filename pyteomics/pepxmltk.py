@@ -148,7 +148,7 @@ class Psm:
                 1 for k in psm_tandem['protein'][0]['peptide'] if '_ions' in k
                 ) * max(self.assumed_charge - 1, 1)
         self.calc_neutral_mass = round(
-                psm_tandem['protein'][0]['peptide']['mh'] - 
+                psm_tandem['protein'][0]['peptide']['mh'] -
                 mass.calculate_mass('H+'), 6)
         self.massdiff = round(
                 self.precursor_neutral_mass - self.calc_neutral_mass, 6)
@@ -170,7 +170,8 @@ class Psm:
             temp_info = self.get_modification_info(mod, mods)
             if temp_info:
                 self.modifications.append(temp_info)
-        self.mod_label = ((' ' + self.mod_label_n) if self.mod_label_n else '') + ((' ' + self.mod_label_c) if self.mod_label_c else '')
+        self.mod_label = ((' ' + self.mod_label_n) if self.mod_label_n else '') + (
+                (' ' + self.mod_label_c) if self.mod_label_c else '')
         score_list = ['hyperscore',
                       'nextscore',
                       'b_score',
@@ -320,15 +321,16 @@ def convert(files, path_to_output, fdr=None):
                             ].split(',')]
                 modifications = Modifications(parameters['input parameters'])
                 psms = []
-            psms.extend((Psm(psm_tandem, proteases, modifications)
-                for psm_tandem in tandem.read(path_to_file)))
+            with tandem.read(path_to_file) as f:
+                psms.extend((Psm(psm_tandem, proteases, modifications)
+                    for psm_tandem in f))
         templatevars = {'parameters': parameters,
                         'proteases': proteases,
                         'path_to_file': path_to_file,
                         'path_to_output': path_to_output,
                         'modifications': [m for m in modifications.modifications
                             if m['aminoacid']],
-                        'term_modifications': [m for m in 
+                        'term_modifications': [m for m in
                             modifications.modifications if not m['aminoacid']],
                         'psms': psms
         }
