@@ -58,28 +58,8 @@ class Modifications:
 
     @staticmethod
     def is_equal_modification(modification1, modification2):
-        if isinstance(modification2, list):
-            if round(modification1['massdiff'] - float(modification2[0]),
-                    4) == 0:
-                if ((not modification1['terminus'] and
-                    modification1['aminoacid'] == modification2[1])
-                    or (
-                            modification1['terminus'] == 'N' and
-                            modification2[1] == '[')
-                    or (
-                            modification1['terminus'] == 'C' and
-                            modification2[1] == ']')):
-                            return True
-        elif isinstance(modification2, dict):
-            if (modification1['aminoacid'] == modification2['aminoacid']
-                and modification1['massdiff'] == modification2['massdiff']):
-                return True
-        elif isinstance(modification2, str):
-            if modification1['aminoacid'] == modification2.split('@')[1] and round(
-                    modification1['massdiff'] - float(
-                        modification2.split('@')[0]), 5) == 0:
-                return True
-        return False
+        return (modification1['aminoacid'] == modification2.split('@')[1] and
+                modification1['massdiff'] - float(modification2.split('@')[0]) < 1e-5)
 
     def sort_modifications(self):
         self.modifications.sort(key=lambda item: item['variable'])
