@@ -4,12 +4,12 @@
    <msms_run_summary base_name="{{ path_to_file }}" search_engine="X! Tandem" raw_data_type="raw" raw_data=".?">
    {%- for protease in proteases %}
       <sample_enzyme name="{{ protease.name }}">
-<specificity cut="{{ protease.cut }}" no_cut="{{ protease.no_cut}}" sense="{{ protease.sense }}"/>
-</sample_enzyme>
+        <specificity cut="{{ protease.cut }}" no_cut="{{ protease.no_cut}}" sense="{{ protease.sense }}"/>
+      </sample_enzyme>
    {%- endfor %}
-<search_summary base_name="{{ path_to_file }}" search_engine="X! Tandem" precursor_mass_type="monoisotopic" fragment_mass_type="{{ parameters['input parameters']["spectrum, fragment mass type"] }}" search_id="1">
+      <search_summary base_name="{{ path_to_file }}" search_engine="X! Tandem" precursor_mass_type="monoisotopic" fragment_mass_type="{{ parameters['input parameters']['spectrum, fragment mass type'] }}" search_id="1">
          <search_database local_path="{{ parameters['performance parameters']['list path, sequence source #1']}}" type="AA"/>
-         <enzymatic_search_constraint enzyme="{{ parameters['input parameters']['protein, cleavage site']}}" max_num_internal_cleavages="{{ parameters['input parameters']["scoring, maximum missed cleavage sites"] }}" min_number_termini="2" />
+         <enzymatic_search_constraint enzyme="{{ parameters['input parameters']['protein, cleavage site']}}" max_num_internal_cleavages="{{ parameters['input parameters']['scoring, maximum missed cleavage sites'] }}" min_number_termini="2" />
    {%- for modification in modifications %}
          <aminoacid_modification aminoacid="{{ modification.aminoacid }}" massdiff="{{ modification.massdiff }}" mass="{{ modification.mass }}" variable="{{ modification.variable }}"/>
    {%- endfor %}
@@ -30,12 +30,12 @@
          <parameter name="{{ key }}" value="{{ value }}"/>
    {%- endfor %}
       </search_summary>
-    {%- for psm in psms %}
-      <spectrum_query spectrum="{{ psm.spectrum }}" start_scan="{{ psm.start_scan }}" end_scan="{{ psm.end_scan}}" precursor_neutral_mass="{{ psm.precursor_neutral_mass}}" assumed_charge="{{ psm.assumed_charge}}" index="1" retention_time_sec="{{ psm.rt }}">
+   {%- for psm in psms %}
+   <spectrum_query spectrum="{{ psm.spectrum }}" start_scan="{{ psm.start_scan }}" end_scan="{{ psm.end_scan }}" precursor_neutral_mass="{{ psm.precursor_neutral_mass }}" assumed_charge="{{ psm.assumed_charge }}" index="{{ loop.index }}" retention_time_sec="{{ psm.rt }}">
       <search_result>
-         <search_hit hit_rank="1" peptide="{{ psm.sequence}}" peptide_prev_aa="{{ psm.peptide_prev_aa }}" peptide_next_aa="{{ psm.peptide_next_aa }}" protein="{{ psm.protein }}" protein_descr="{{ psm.protein_descr }}" num_tot_proteins="{{ psm.num_tot_proteins }}" num_matched_ions="{{ psm.num_matched_ions }}" tot_num_ions="{{ psm.tot_num_ions }}" calc_neutral_pep_mass="{{ psm.calc_neutral_mass }}" massdiff="{{ psm.massdiff}}" num_tol_term="{{ psm.num_tol_term}}" num_missed_cleavages="{{ psm.num_missed_cleavages}}" is_rejected="0">
+         <search_hit hit_rank="1" peptide="{{ psm.sequence }}" peptide_prev_aa="{{ psm.peptide_prev_aa }}" peptide_next_aa="{{ psm.peptide_next_aa }}" protein="{{ psm.protein }}" protein_descr="{{ psm.protein_descr }}" num_tot_proteins="{{ psm.num_tot_proteins }}" num_matched_ions="{{ psm.num_matched_ions }}" tot_num_ions="{{ psm.tot_num_ions }}" calc_neutral_pep_mass="{{ psm.calc_neutral_mass }}" massdiff="{{ psm.massdiff }}" num_tol_term="{{ psm.num_tol_term }}" num_missed_cleavages="{{ psm.num_missed_cleavages }}" is_rejected="0">
          {%- for protein in psm.alternative_proteins %}
-            <alternative_protein protein="{{ protein.dbname }}" protein_descr="{{ protein.descr}}" num_tol_term="{{ protein.num_tol_term }}"/>
+            <alternative_protein protein="{{ protein.dbname }}" protein_descr="{{ protein.descr }}" num_tol_term="{{ protein.num_tol_term }}"/>
          {%- endfor %}
          {%- if psm.modifications or psm.mod_label_n or psm.mod_label_c %}
             <modification_info{{ psm.mod_label|safe }}>
@@ -52,7 +52,7 @@
          </search_hit>
       </search_result>
       </spectrum_query>
-    {%- endfor %}
+   {%- endfor %}
    </msms_run_summary>
 </msms_pipeline_analysis>
 
