@@ -11,10 +11,10 @@
          <search_database local_path="{{ parameters['performance parameters']['list path, sequence source #1']}}" type="AA"/>
          <enzymatic_search_constraint enzyme="{{ parameters['input parameters']['protein, cleavage site']}}" max_num_internal_cleavages="{{ parameters['input parameters']['scoring, maximum missed cleavage sites'] }}" min_number_termini="2" />
    {%- for modification in modifications %}
-         <aminoacid_modification aminoacid="{{ modification.aminoacid }}" massdiff="{{ modification.massdiff }}" mass="{{ modification.mass }}" variable="{{ modification.variable }}"/>
+         <aminoacid_modification aminoacid="{{ modification.aminoacid }}" massdiff="{{ modification.massdiff }}" mass="{{ modification.mass }}" variable="{{ 'Y' if modification.variable else 'N' }}"/>
    {%- endfor %}
    {%- for term_modification in term_modifications %}
-         <terminal_modification terminus="{{ term_modification.terminus_lower }}" massdiff="{{ term_modification.massdiff }}" mass="{{ term_modification.mass }}" protein_terminus="{{ term_modification.terminus }}" variable="{{ term_modification.variable }}" symbol="^" /><!--X! Tandem n-terminal AA variable modification-->'
+         <terminal_modification terminus="{{ term_modification.terminus_lower }}" massdiff="{{ term_modification.massdiff }}" mass="{{ term_modification.mass }}" protein_terminus="{{ term_modification.terminus }}" variable="{{ 'Y' if term_modification.variable else 'N' }}" symbol="^" /><!--X! Tandem n-terminal AA variable modification-->'
    {%- endfor %}
 
          <!-- Input parameters -->
