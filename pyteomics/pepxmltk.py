@@ -9,7 +9,6 @@ class Modifications:
     def __init__(self, input_parameters):
         self.modifications = []
         self.std_aa_mass = copy(mass.std_aa_mass)
-        self.fixed_mods = []
         self.variable_mods = []
         self.std_aa_mass['N_term'] = float(
                 input_parameters['protein, cleavage N-terminal mass change'])
@@ -47,14 +46,14 @@ class Modifications:
                 + (['42.010565@['] if input_parameters.get(
                     'protein, quick acetyl', 'yes') == 'yes' else [])):
             if mod:
-                self.modifications.append(self.get_modification_dict(mod, 'Y'))
+                self.modifications.append(self.get_modification_dict(mod, True))
         for mod in set(input_parameters.get(
             'residue, modification mass', ',').split(',')
                 + (input_parameters.get(
                     'refine, modification mass', '').split(',')
                    if input_parameters.get('refine', 'no') == 'yes' else [])):
             if mod:
-                self.modifications.append(self.get_modification_dict(mod, 'N'))
+                self.modifications.append(self.get_modification_dict(mod, False))
 
     @staticmethod
     def is_equal_modification(modification1, modification2):
@@ -66,7 +65,7 @@ class Modifications:
 
     def change_std_aa_mass(self):
         for modification in self.modifications:
-            if modification['variable'] == 'N':
+            if not modification['variable']:
                 if modification['aminoacid']:
                     self.std_aa_mass[modification['aminoacid']
                             ] += modification['massdiff']
@@ -79,13 +78,13 @@ class Modifications:
                 modification['mass'] = round(
                         self.std_aa_mass[modification['aminoacid']]
                         + (modification['massdiff']
-                            if modification['variable'] == 'Y' else 0),
+                            if modification['variable'] else 0),
                         5)
             else:
                 modification['mass'] = round(
                         self.std_aa_mass['%s_term' % modification['terminus']]
                         + (modification['massdiff']
-                            if modification['variable'] == 'Y' else 0),
+                            if modification['variable'] else 0),
                         5)
 
     def info_about_xtandem_term_modifications(self):
@@ -93,7 +92,7 @@ class Modifications:
         for mod in xtandem_nterm_default:
             if not any(self.is_equal_modification(modification, mod)
                     for modification in self.modifications):
-                temp_mod = self.get_modification_dict(mod, 'Y')
+                temp_mod = self.get_modification_dict(mod, True)
                 self.modifications.append(temp_mod)
 
     def add_lowercase_for_term_modifications(self):
