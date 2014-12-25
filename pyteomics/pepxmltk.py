@@ -109,6 +109,7 @@ class Psm:
             self.rt = float(psm_tandem['rt'])
         except KeyError:
             self.rt = 0
+        self.hit_rank = 1
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.precursor_neutral_mass = round(psm_tandem['mh'] - mass.calculate_mass('H+'), 6)
