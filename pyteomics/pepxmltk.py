@@ -75,17 +75,15 @@ class Modifications:
     def calculate_modification_masses(self):
         for modification in self.modifications:
             if modification['aminoacid']:
-                modification['mass'] = round(
+                modification['mass'] = (
                         self.std_aa_mass[modification['aminoacid']]
                         + (modification['massdiff']
-                            if modification['variable'] else 0),
-                        5)
+                            if modification['variable'] else 0))
             else:
-                modification['mass'] = round(
+                modification['mass'] = (
                         self.std_aa_mass['%s_term' % modification['terminus']]
                         + (modification['massdiff']
-                            if modification['variable'] else 0),
-                        5)
+                            if modification['variable'] else 0))
 
     def info_about_xtandem_term_modifications(self):
         xtandem_nterm_default = ['-17.0265@C', '-18.0106@E', '-17.0265@Q']
@@ -112,14 +110,15 @@ class Psm:
         self.hit_rank = 1
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
-        self.precursor_neutral_mass = round(psm_tandem['mh'] - mass.calculate_mass('H+'), 6)
+        self.precursor_neutral_mass = psm_tandem['mh'] - mass.calculate_mass('H+')
         self.assumed_charge = psm_tandem['z']
         self.sequence = psm_tandem['protein'][0]['peptide']['seq']
         self.peptide_prev_aa = psm_tandem['protein'][0]['peptide']['pre'][-1]
         self.peptide_prev_aa.replace('[', '-')
         self.peptide_next_aa = psm_tandem['protein'][0]['peptide']['post'][0]
         self.peptide_next_aa.replace(']', '-')
-        self.protein, self.protein_descr = self.get_protein_info(psm_tandem['protein'][0]['note'])
+        self.protein, self.protein_descr = self.get_protein_info(
+                psm_tandem['protein'][0]['note'])
         self.num_tot_proteins = len(psm_tandem['protein'])
         self.num_matched_ions = sum(
                 v for k, v in psm_tandem['protein'][0]['peptide'].items()
@@ -127,11 +126,9 @@ class Psm:
         self.tot_num_ions = (len(self.sequence) - 1) * sum(
                 1 for k in psm_tandem['protein'][0]['peptide'] if '_ions' in k
                 ) * max(self.assumed_charge - 1, 1)
-        self.calc_neutral_mass = round(
-                psm_tandem['protein'][0]['peptide']['mh'] -
-                mass.calculate_mass('H+'), 6)
-        self.massdiff = round(
-                self.precursor_neutral_mass - self.calc_neutral_mass, 6)
+        self.calc_neutral_mass = (psm_tandem['protein'][0]['peptide']['mh'] -
+                mass.calculate_mass('H+'))
+        self.massdiff = self.precursor_neutral_mass - self.calc_neutral_mass
         self.num_tol_term = self.calc_num_tol_term(proteases)
         self.num_missed_cleavages = psm_tandem['protein'][0][
                 'peptide']['missed_cleavages']
