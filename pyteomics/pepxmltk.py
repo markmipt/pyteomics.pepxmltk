@@ -128,7 +128,7 @@ class Psm:
                 ]['note'].replace('\n', '')
         try:
             self.rt = float(psm_tandem['rt'])
-        except KeyError:
+        except (KeyError, TypeError):
             self.rt = 0
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
