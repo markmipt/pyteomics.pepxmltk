@@ -9,7 +9,6 @@ class Modifications:
     def __init__(self, input_parameters):
         self.modifications = []
         self.std_aa_mass = copy(mass.std_aa_mass)
-        self.fixed_mods = []
         self.variable_mods = []
         self.std_aa_mass['N_term'] = float(
                 input_parameters['protein, cleavage N-terminal mass change'])
@@ -47,46 +46,26 @@ class Modifications:
                 + (['42.010565@['] if input_parameters.get(
                     'protein, quick acetyl', 'yes') == 'yes' else [])):
             if mod:
-                self.modifications.append(self.get_modification_dict(mod, 'Y'))
+                self.modifications.append(self.get_modification_dict(mod, True))
         for mod in set(input_parameters.get(
             'residue, modification mass', ',').split(',')
                 + (input_parameters.get(
                     'refine, modification mass', '').split(',')
                    if input_parameters.get('refine', 'no') == 'yes' else [])):
             if mod:
-                self.modifications.append(self.get_modification_dict(mod, 'N'))
+                self.modifications.append(self.get_modification_dict(mod, False))
 
     @staticmethod
     def is_equal_modification(modification1, modification2):
-        if isinstance(modification2, list):
-            if round(modification1['massdiff'] - float(modification2[0]),
-                    4) == 0:
-                if ((not modification1['terminus'] and
-                    modification1['aminoacid'] == modification2[1])
-                    or (
-                            modification1['terminus'] == 'N' and
-                            modification2[1] == '[')
-                    or (
-                            modification1['terminus'] == 'C' and
-                            modification2[1] == ']')):
-                            return True
-        elif isinstance(modification2, dict):
-            if (modification1['aminoacid'] == modification2['aminoacid']
-                and modification1['massdiff'] == modification2['massdiff']):
-                return True
-        elif isinstance(modification2, str):
-            if modification1['aminoacid'] == modification2.split('@')[1] and round(
-                    modification1['massdiff'] - float(
-                        modification2.split('@')[0]), 5) == 0:
-                return True
-        return False
+        return (modification1['aminoacid'] == modification2.split('@')[1] and
+                modification1['massdiff'] - float(modification2.split('@')[0]) < 1e-5)
 
     def sort_modifications(self):
         self.modifications.sort(key=lambda item: item['variable'])
 
     def change_std_aa_mass(self):
         for modification in self.modifications:
-            if modification['variable'] == 'N':
+            if not modification['variable']:
                 if modification['aminoacid']:
                     self.std_aa_mass[modification['aminoacid']
                             ] += modification['massdiff']
@@ -96,24 +75,22 @@ class Modifications:
     def calculate_modification_masses(self):
         for modification in self.modifications:
             if modification['aminoacid']:
-                modification['mass'] = round(
+                modification['mass'] = (
                         self.std_aa_mass[modification['aminoacid']]
                         + (modification['massdiff']
-                            if modification['variable'] == 'Y' else 0),
-                        5)
+                            if modification['variable'] else 0))
             else:
-                modification['mass'] = round(
+                modification['mass'] = (
                         self.std_aa_mass['%s_term' % modification['terminus']]
                         + (modification['massdiff']
-                            if modification['variable'] == 'Y' else 0),
-                        5)
+                            if modification['variable'] else 0))
 
     def info_about_xtandem_term_modifications(self):
         xtandem_nterm_default = ['-17.0265@C', '-18.0106@E', '-17.0265@Q']
         for mod in xtandem_nterm_default:
             if not any(self.is_equal_modification(modification, mod)
                     for modification in self.modifications):
-                temp_mod = self.get_modification_dict(mod, 'Y')
+                temp_mod = self.get_modification_dict(mod, True)
                 self.modifications.append(temp_mod)
 
     def add_lowercase_for_term_modifications(self):
@@ -129,17 +106,19 @@ class Psm:
         try:
             self.rt = float(psm_tandem['rt'])
         except (KeyError, TypeError):
-            self.rt = 0
+            self.rt = None
+        self.hit_rank = 1
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
-        self.precursor_neutral_mass = round(psm_tandem['mh'] - mass.calculate_mass('H+'), 6)
+        self.precursor_neutral_mass = psm_tandem['mh'] - mass.calculate_mass('H+')
         self.assumed_charge = psm_tandem['z']
         self.sequence = psm_tandem['protein'][0]['peptide']['seq']
         self.peptide_prev_aa = psm_tandem['protein'][0]['peptide']['pre'][-1]
         self.peptide_prev_aa.replace('[', '-')
         self.peptide_next_aa = psm_tandem['protein'][0]['peptide']['post'][0]
         self.peptide_next_aa.replace(']', '-')
-        self.protein, self.protein_descr = self.get_protein_info(psm_tandem['protein'][0]['note'])
+        self.protein, self.protein_descr = self.get_protein_info(
+                psm_tandem['protein'][0]['note'])
         self.num_tot_proteins = len(psm_tandem['protein'])
         self.num_matched_ions = sum(
                 v for k, v in psm_tandem['protein'][0]['peptide'].items()
@@ -147,11 +126,9 @@ class Psm:
         self.tot_num_ions = (len(self.sequence) - 1) * sum(
                 1 for k in psm_tandem['protein'][0]['peptide'] if '_ions' in k
                 ) * max(self.assumed_charge - 1, 1)
-        self.calc_neutral_mass = round(
-                psm_tandem['protein'][0]['peptide']['mh'] - 
-                mass.calculate_mass('H+'), 6)
-        self.massdiff = round(
-                self.precursor_neutral_mass - self.calc_neutral_mass, 6)
+        self.calc_neutral_mass = (psm_tandem['protein'][0]['peptide']['mh'] -
+                mass.calculate_mass('H+'))
+        self.massdiff = self.precursor_neutral_mass - self.calc_neutral_mass
         self.num_tol_term = self.calc_num_tol_term(proteases)
         self.num_missed_cleavages = psm_tandem['protein'][0][
                 'peptide']['missed_cleavages']
@@ -170,7 +147,8 @@ class Psm:
             temp_info = self.get_modification_info(mod, mods)
             if temp_info:
                 self.modifications.append(temp_info)
-        self.mod_label = ((' ' + self.mod_label_n) if self.mod_label_n else '') + ((' ' + self.mod_label_c) if self.mod_label_c else '')
+        self.mod_label = ((' ' + self.mod_label_n) if self.mod_label_n else '') + (
+                (' ' + self.mod_label_c) if self.mod_label_c else '')
         score_list = ['hyperscore',
                       'nextscore',
                       'b_score',
@@ -320,15 +298,16 @@ def convert(files, path_to_output, fdr=None):
                             ].split(',')]
                 modifications = Modifications(parameters['input parameters'])
                 psms = []
-            psms.extend((Psm(psm_tandem, proteases, modifications)
-                for psm_tandem in tandem.read(path_to_file)))
+            with tandem.read(path_to_file) as f:
+                psms.extend((Psm(psm_tandem, proteases, modifications)
+                    for psm_tandem in f))
         templatevars = {'parameters': parameters,
                         'proteases': proteases,
                         'path_to_file': path_to_file,
                         'path_to_output': path_to_output,
                         'modifications': [m for m in modifications.modifications
                             if m['aminoacid']],
-                        'term_modifications': [m for m in 
+                        'term_modifications': [m for m in
                             modifications.modifications if not m['aminoacid']],
                         'psms': psms
         }
