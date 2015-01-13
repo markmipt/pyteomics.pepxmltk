@@ -311,7 +311,7 @@ def convert(files, path_to_output, fdr=None):
                             modifications.modifications if not m['aminoacid']],
                         'psms': psms
         }
-        write_template(**templatevars)
+        write(**templatevars)
         input_files = (path_to_output, )
     else:
         input_files = files
@@ -324,7 +324,7 @@ def convert(files, path_to_output, fdr=None):
     elif len(input_files) > 1:
         easy_write_pepxml(input_files, path_to_output, None)
 
-def write_template(**template_vars):
+def write(**template_vars):
     templateloader = jinja2.FileSystemLoader(
             searchpath=path.join(
                 path.dirname(path.abspath(__file__)), "templates/"))
