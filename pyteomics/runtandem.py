@@ -39,7 +39,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
         return
     if isinstance(spectra, list):
         return [
-            runtandem(folder, params, db, s, convert, overwrite)
+            runtandem(folder, params, db, s, convert, overwrite, tandem, tandem2xml)
             for s in spectra
             ]
     elif isinstance(spectra, str):
@@ -47,7 +47,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
         splist = glob(spectra)
         logging.info("{} file(s) found.".format(len(splist)))
         if len(splist) > 1:
-            return runtandem(folder, params, db, splist, convert, overwrite)
+            return runtandem(folder, params, db, splist, convert, overwrite, tandem, tandem2xml)
         elif splist:
             if os.path.exists(params):
                 params = build_dict(params)
