@@ -1,9 +1,13 @@
 from lxml import etree
+import os
 import sys
 from glob import glob
 from shutil import move
 import subprocess
 import logging
+
+tandem = os.environ.get('TANDEMEXE')
+tandem2xml = os.environ.get('TANDEM2XML')
 
 def inputxml(path, params):
     with open(path, 'w') as inputxml:
@@ -25,7 +29,8 @@ def taxonomy_xml(database, path, taxon):
         xml.write("</bioml>")
     return path
 
-def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False):
+def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
+        tandem=tandem, tandem2xml=tandem2xml):
     if isinstance(spectra, list):
         return [
             runtandem(folder, params, db, s, convert, overwrite)
