@@ -31,6 +31,12 @@ def taxonomy_xml(database, path, taxon):
 
 def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
         tandem=tandem, tandem2xml=tandem2xml):
+    if tandem is None:
+        logging.error('TANDEM executable not set')
+        return
+    if convert and tandem2xml is None:
+        logging.error('TANDEM2XML executable not set')
+        return
     if isinstance(spectra, list):
         return [
             runtandem(folder, params, db, s, convert, overwrite)
