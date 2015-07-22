@@ -325,9 +325,7 @@ def convert(files, path_to_output, fdr=None):
         easy_write_pepxml(input_files, path_to_output, None)
 
 def write(**template_vars):
-    templateloader = jinja2.FileSystemLoader(
-            searchpath=path.join(
-                path.dirname(path.abspath(__file__)), "templates/"))
+    templateloader = jinja2.PackageLoader('pyteomics')
     templateenv = jinja2.Environment(loader=templateloader, autoescape=True,
             extensions=['jinja2.ext.autoescape'])
     template_file = "template.jinja"
