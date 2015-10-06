@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-setup.py file for pyteomics.pyteomics
+setup.py file for pyteomics.pepxmltk
 '''
 
 from setuptools import setup, find_packages
@@ -16,7 +16,7 @@ setup(
     author               = 'Mark Ivanov & Lev Levitsky',
     author_email         = 'pyteomics@googlegroups.com',
     url                  = 'http://hg.theorchromo.ru/pyteomics',
-    install_requires     = ['pyteomics[XML]', 'jinja2']
+    install_requires     = ['pyteomics[XML]', 'jinja2'],
     classifiers          = ['Intended Audience :: Science/Research',
                             'Programming Language :: Python :: 2.7',
                             'Programming Language :: Python :: 3',
