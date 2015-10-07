@@ -318,8 +318,8 @@ def convert(files, path_to_output, fdr=None):
     if fdr:
         psms = set()
         for infile in input_files:
-            with pepxml.filter(infile, fdr=fdr) as f:
-                psms.update(psm['spectrum'] for psm in f)
+            f = pepxml.filter(infile, fdr=fdr)
+            psms.update(psm['spectrum'] for psm in f)
         easy_write_pepxml(input_files, path_to_output, psms)
     elif len(input_files) > 1:
         easy_write_pepxml(input_files, path_to_output, None)
