@@ -177,10 +177,10 @@ class Psm:
             self.mod_label_n = 'mod_nterm_mass="43.0184"'
         for m in mods.modifications:
             if abs(modification['modified'] - m['massdiff']) <= 0.001:
-                if m['terminus'] == 'N':
+                if position == 1 and m['terminus'] == 'N':
                     self.mod_label_n = 'mod_nterm_mass="%s"' % (m['mass'])
                     flag = 0
-                elif m['terminus'] == 'C':
+                elif position == len(self.sequence) and m['terminus'] == 'C':
                     self.mod_label_c = ' mod_cterm_mass="%s"' % (m['mass'])
                     flag = 0
         if flag:
