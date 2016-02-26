@@ -3,6 +3,7 @@ from copy import copy
 from collections import OrderedDict
 import jinja2
 from os import path
+from lxml import etree
 
 
 class Modifications:
@@ -287,12 +288,11 @@ def convert(files, path_to_output, fdr=None):
                 path_to_file = path.abspath(path_to_file)
                 path_to_output = path.abspath(path_to_output)
                 parameters = dict()
-                params = tandem.iterfind(path_to_file,
-                        'group[type="parameters"]', recursive=True)
-                for param in params:
-                    parameters[param['label']] = OrderedDict(
-                            sorted((v['label'], v['note'] if 'note' in v else "")
-                                     for v in param['note']))
+                for _, elem in etree.iterparse(path_to_file, tag='group'):
+                    if elem.attrib['type'] == 'parameters':
+                        parameters[elem.attrib['label']] = OrderedDict(
+                            sorted((sub.attrib['label'], getattr(sub.text, 'strip', lambda: '')())
+                                for sub in elem.iterchildren()))
                 proteases = [Protease(rule) for rule in
                         parameters['input parameters']['protein, cleavage site'
                             ].split(',')]
