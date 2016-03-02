@@ -294,13 +294,9 @@ def convert(files, path_to_output, fdr=None):
                             sorted((sub.attrib['label'], getattr(sub.text, 'strip', lambda: '')())
                                 for sub in elem.iterchildren()))
                 proteases = [Protease(rule) for rule in
-                        parameters['input parameters']['protein, cleavage site'
-                            ].split(',')]
+                        parameters['input parameters']['protein, cleavage site'].split(',')]
                 modifications = Modifications(parameters['input parameters'])
-                psms = []
-            with tandem.read(path_to_file) as f:
-                psms.extend((Psm(psm_tandem, proteases, modifications)
-                    for psm_tandem in f))
+            
         templatevars = {'parameters': parameters,
                         'proteases': proteases,
                         'path_to_file': path_to_file,
@@ -309,7 +305,8 @@ def convert(files, path_to_output, fdr=None):
                             if m['aminoacid']],
                         'term_modifications': [m for m in
                             modifications.modifications if not m['aminoacid']],
-                        'psms': psms
+                        'psms': (Psm(psm_tandem, proteases, modifications)
+                            for path_to_file in files for psm_tandem in tandem.read(path_to_file))
         }
         write(**templatevars)
         input_files = (path_to_output, )
