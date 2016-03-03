@@ -293,6 +293,7 @@ def convert(files, path_to_output, fdr=None):
                         parameters[elem.attrib['label']] = OrderedDict(
                             sorted((sub.attrib['label'], getattr(sub.text, 'strip', lambda: '')())
                                 for sub in elem.iterchildren()))
+                    elem.clear()
                 proteases = [Protease(rule) for rule in
                         parameters['input parameters']['protein, cleavage site'].split(',')]
                 modifications = Modifications(parameters['input parameters'])
