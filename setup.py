@@ -29,5 +29,6 @@ setup(
     packages             = find_packages(),
     namespace_packages   = ['pyteomics'],
     package_data         = {'pyteomics': ['templates/*']},
-    scripts              = ['pyteomics/scripts/pepxmltk.py', 'pyteomics/scripts/runtandem']
+    entry_points         = {'console_scripts': ['pepxmltk.py = pyteomics.pepxmltk:main',
+                                                'runtandem = pyteomics.runtandem:main']}
     )
