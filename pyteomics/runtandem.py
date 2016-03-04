@@ -7,8 +7,8 @@ import subprocess
 import logging
 import argparse
 
-tandem = os.environ.get('TANDEMEXE')
-tandem2xml = os.environ.get('TANDEM2XML')
+_tandem = os.environ.get('TANDEMEXE')
+_tandem2xml = os.environ.get('TANDEM2XML')
 
 def inputxml(path, params):
     with open(path, 'w') as inputxml:
@@ -31,7 +31,7 @@ def taxonomy_xml(database, path, taxon):
     return path
 
 def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
-        tandem=tandem, tandem2xml=tandem2xml):
+        tandem=_tandem, tandem2xml=_tandem2xml):
     if tandem is None:
         logging.error('TANDEM executable not set')
         return
@@ -150,8 +150,8 @@ def main():
 
     logging.info("Starting runtandem...")
     spectra = args.spectra or None
-    tandem = args.tandem or runtandem.tandem
-    tandem2xml = args.tandem2xml or runtandem.tandem2xml
+    tandem = args.tandem or _tandem
+    tandem2xml = args.tandem2xml or _tandem2xml
     if tandem is None:
         logging.error("X!Tandem executable not specified. "
                 "Use --tandem.exe or set the TANDEMEXE variable")
