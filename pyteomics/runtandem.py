@@ -57,6 +57,8 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
             if spectra is None:
                 logging.error('No spectra to process.')
                 return
+            else:
+                logging.info('No "spectra" argument specified, using input file.')
         logging.info("runtandem: searching files by mask %s...", spectra)
         splist = glob(spectra) or None
         logging.info("{} file(s) found.".format(len(splist)))
