@@ -38,30 +38,35 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
     if convert and tandem2xml is None:
         logging.error('TANDEM2XML executable not set')
         return
+
+    if isinstance(params, str):
+        if os.path.exists(params):
+            params = build_dict(params)
+        else:
+            logging.error('Input file %s does not exist.' % params)
+            return
+
     if isinstance(spectra, list):
         return [
             runtandem(folder, params, db, s, convert, overwrite, tandem, tandem2xml)
             for s in spectra
             ]
-    elif isinstance(spectra, str):
+    else:
+        if spectra is None:
+            spectra = params.get("spectrum, path")
+            if spectra is None:
+                logging.error('No spectra to process.')
+                return
         logging.info("runtandem: searching files by mask %s...", spectra)
-        splist = glob(spectra)
+        splist = glob(spectra) or None
         logging.info("{} file(s) found.".format(len(splist)))
         if len(splist) > 1:
             return runtandem(folder, params, db, splist, convert, overwrite, tandem, tandem2xml)
         elif splist:
-            if os.path.exists(params):
-                params = build_dict(params)
-                params["spectrum, path"] = splist[0]
-            else:
-                logging.error('Could not load input file from %s.' % params)
-                return
+            params["spectrum, path"] = splist[0]
         else:
             logging.error('Nothing to process.')
             return
-    else:
-        logging.error("Could not find the input file %s", params)
-        return
 
     if not os.path.isdir(folder):
         logging.info("Creating %s..." % folder)
