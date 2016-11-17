@@ -59,17 +59,9 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
                 return
             else:
                 logging.info('No "spectra" argument specified, using input file.')
-        logging.info("runtandem: searching files by mask %s...", spectra)
-        splist = glob(spectra) or None
-        logging.info("{} file(s) found.".format(len(splist)))
-        if len(splist) > 1:
-            return runtandem(folder, params, db, splist, convert, overwrite, tandem, tandem2xml)
-        elif splist:
-            params["spectrum, path"] = splist[0]
-        else:
-            logging.error('Nothing to process.')
-            return
-
+        logging.info("runtandem: processing file %s...", spectra)
+        params["spectrum, path"] = spectra
+        
     if not os.path.isdir(folder):
         logging.info("Creating %s..." % folder)
         os.makedirs(folder)

@@ -298,7 +298,7 @@ def convert(files, path_to_output, fdr=None):
                 proteases = [Protease(rule) for rule in
                         parameters['input parameters']['protein, cleavage site'].split(',')]
                 modifications = Modifications(parameters['input parameters'])
-            
+
         templatevars = {'parameters': parameters,
                         'proteases': proteases,
                         'path_to_file': path_to_file,
