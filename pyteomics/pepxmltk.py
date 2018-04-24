@@ -5,6 +5,7 @@ import jinja2
 from os import path
 from lxml import etree
 import argparse
+from xml.sax.saxutils import unescape
 
 
 class Modifications:
@@ -259,27 +260,25 @@ def easy_write_pepxml(input_files, path_to_output, valid_psms=None):
     unlocked = True
     if path_to_output in input_files:
         tmp_lines = open(path_to_output, 'r').readlines()
-    output_file = open(path_to_output, 'w')
-    for infile in input_files:
-        if infile != path_to_output:
-            input_file = open(infile, 'r')
-            lines = input_file.readlines()
-            input_file.close()
-        else:
-            lines = tmp_lines
-        for line in lines:
-            if '<spectrum_query' in line:
-                if valid_psms and line.split(
-                        'spectrum="')[1].split('" ')[0] not in valid_psms:
-                    unlocked = False
-                else:
+    with open(path_to_output, 'w') as output_file:
+        for infile in input_files:
+            if infile != path_to_output:
+                with open(infile) as input_file:
+                    lines = input_file.readlines()
+            else:
+                lines = tmp_lines
+            for line in lines:
+                if '<spectrum_query' in line:
+                    if valid_psms and unescape(
+                            line.split('spectrum="')[1].split('" ')[0], {'&quot;': '"'}) not in valid_psms:
+                        unlocked = False
+                    else:
+                        unlocked = True
+                if unlocked:
+                    output_file.write(line)
+                if '</spectrum_query>' in line:
                     unlocked = True
-            if unlocked:
-                output_file.write(line)
-            if '</spectrum_query>' in line:
-                unlocked = True
-        unlocked = False
-    output_file.close()
+            unlocked = False
 
 
 def convert(files, path_to_output, fdr=None):
