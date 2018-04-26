@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from pyteomics import tandem, parser, mass, pepxml
 from copy import copy
 from collections import OrderedDict
@@ -5,7 +6,7 @@ import jinja2
 from os import path
 from lxml import etree
 import argparse
-from xml.sax.saxutils import unescape
+from xml.sax import saxutils
 
 
 class Modifications:
@@ -269,8 +270,8 @@ def easy_write_pepxml(input_files, path_to_output, valid_psms=None):
                 lines = tmp_lines
             for line in lines:
                 if '<spectrum_query' in line:
-                    if valid_psms and unescape(
-                            line.split('spectrum="')[1].split('" ')[0], {'&quot;': '"'}) not in valid_psms:
+                    check_line = saxutils.unescape(line.split('spectrum="')[1].split('" ')[0], {'&quot;': '"'})
+                    if valid_psms and check_line not in valid_psms:
                         unlocked = False
                     else:
                         unlocked = True
