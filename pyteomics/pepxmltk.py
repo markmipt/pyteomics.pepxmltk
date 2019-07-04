@@ -258,11 +258,13 @@ class Protease:
 
 
 def easy_write_pepxml(input_files, path_to_output, valid_psms=None):
-    unlocked = True
+    n = len(input_files)
     if path_to_output in input_files:
-        tmp_lines = open(path_to_output, 'r').readlines()
+        with open(path_to_output) as f:
+            tmp_lines = f.readlines()
     with open(path_to_output, 'w') as output_file:
-        for infile in input_files:
+        for i, infile in enumerate(input_files):
+            unlocked = (i == 0)
             if infile != path_to_output:
                 with open(infile) as input_file:
                     lines = input_file.readlines()
@@ -278,8 +280,7 @@ def easy_write_pepxml(input_files, path_to_output, valid_psms=None):
                 if unlocked:
                     output_file.write(line)
                 if '</spectrum_query>' in line:
-                    unlocked = True
-            unlocked = False
+                    unlocked = (i == n-1)
 
 
 def convert(files, path_to_output, fdr=None):
@@ -347,7 +348,7 @@ def main():
 
     * Convert multiple files, derive names from input names:
 
-      $ pepxmltk.py input1.t.xml input2.t.xml ... inputN.t.xml 
+      $ pepxmltk.py input1.t.xml input2.t.xml ... inputN.t.xml
 
     * Convert multiple files, join results into a single pepXML file:
 

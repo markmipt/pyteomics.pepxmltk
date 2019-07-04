@@ -129,7 +129,7 @@ def main():
     parser.add_argument('dir', help='Directory to store the results')
     parser.add_argument('db', help='FASTA database for search')
     parser.add_argument('spectra', nargs='*',
-            help='Any number of data files to search (globs supported)')
+            help='Any number of data files to search')
     parser.add_argument('--noconvert', dest='convert', action='store_false',
             help='Do not convert results to pepXML')
     parser.add_argument('--overwrite', action='store_true',
