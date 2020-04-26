@@ -13,6 +13,12 @@ from your Python code, as well as a command-line script for conversion, merging
 or filtering of X!Tandem files to pepXML. Unlike its analog from Trans-Proteomic
 Pipeline (TPP), the script is capable of handling non-standard enzymes.
 
+The package contains two scripts: **pepxmltk.py** and **runtandem**.
+**pepxmltk.py** does conversion from X!Tandem XML to pepXML, or from pepXML to pepXML, while optionally
+combining multiple files and performing FDR filtering.
+**runtandem** is a CLI wrapper that simplifies the repetitive actions of creating *taxonomy.xml*,
+running X!Tandem, and converting the result to pepXML.
+
 Dependencies
 ------------
 
