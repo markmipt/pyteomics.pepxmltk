@@ -87,7 +87,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
         os.makedirs(folder)
     params["list path, taxonomy information"] = taxonomy_xml(db, os.path.join(folder, "taxonomy.xml"), "python")
     params["protein, taxon"] = "python"
-    inp = inputxml(os.path.join(folder, "input.xml"), params)
+
 
     namestub = os.path.split(spectra)[1].rsplit('.', 1)[0]
     txml_basename = namestub + '.t.xml'
@@ -106,7 +106,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
     if not overwrite:
         txml = get_free_name(txml)
     params["output, path"] = txml
-
+    inp = inputxml(os.path.join(folder, "input.xml"), params)
     logging.debug("Using the following parameters:")
     with open(inp) as fi:
         for line in fi:
@@ -130,7 +130,8 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
             move(out, txml)
         if convert:
             logging.info("Converting results...")
-            pepxml_file = txml.rsplit('.t.xml', 1)[0] + '.pep.xml'
+            base, ext = os.path.splitext(txml)
+            pepxml_file = base.rsplit('.t', 1)[0] + '.pep.xml'
             if not subprocess.call([tandem2xml, txml, pepxml_file], stderr=tandemout, stdout=tandemout):
                 logging.info("Task finished. The results are at {}.".format(pepxml_file))
                 return pepxml_file

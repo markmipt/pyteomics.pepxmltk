@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from pyteomics import tandem, parser, mass, pepxml
+from pyteomics import tandem, parser, mass, pepxml, xml
 from copy import copy
 from collections import OrderedDict
 import jinja2
@@ -281,9 +281,13 @@ def easy_write_pepxml(input_files, path_to_output, valid_psms=None):
                 if '</spectrum_query>' in line:
                     unlocked = (i == n-1)
 
+def is_tandem_xml(fname):
+    _, elem = next(etree.iterparse(fname))
+    return xml._local_name(elem) == 'bioml'
+
 
 def convert(files, path_to_output, fdr=None):
-    if path.splitext(path.splitext(files[0])[0])[-1] == '.t':
+    if is_tandem_xml(files[0]):
         for idx, path_to_file in enumerate(files):
             if idx == 0:
                 path_to_file = path.abspath(path_to_file)
