@@ -10,6 +10,7 @@ import argparse
 _tandem = os.environ.get('TANDEMEXE')
 _tandem2xml = os.environ.get('TANDEM2XML')
 
+
 def inputxml(path, params):
     with open(path, 'w') as inputxml:
         inputxml.write("<?xml version=\"1.0\"?>\n<bioml>\n")
@@ -20,6 +21,7 @@ def inputxml(path, params):
         inputxml.write("</bioml>")
     return path
 
+
 def taxonomy_xml(database, path, taxon):
     with open(path, 'w') as xml:
         xml.write("<?xml version=\"1.0\"?>\n")
@@ -29,6 +31,24 @@ def taxonomy_xml(database, path, taxon):
         xml.write("\t</taxon>\n")
         xml.write("</bioml>")
     return path
+
+
+def get_free_name(txml):
+    i = 1
+    folder, initial = os.path.split(txml)
+    base, ext = os.path.splitext(initial)
+    if base.endswith('.t'):
+        base, ext2 = os.path.splitext(base)
+        ext = ext2 + ext
+    while os.path.isfile(txml):
+        txml = os.path.join(folder, '{}_{}{}'.format(base, i, ext))
+        i += 1
+    if i > 1:
+        logging.debug("Changed file name to %s", txml)
+    else:
+        logging.debug("File name left unchanged: %s", txml)
+    return txml
+
 
 def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
         tandem=_tandem, tandem2xml=_tandem2xml):
@@ -61,15 +81,32 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
                 logging.info('No "spectra" argument specified, using input file.')
         logging.info("runtandem: processing file %s...", spectra)
         params["spectrum, path"] = spectra
-        
+
     if not os.path.isdir(folder):
         logging.info("Creating %s..." % folder)
         os.makedirs(folder)
-    params["list path, taxonomy information"] = taxonomy_xml(
-            db, os.path.join(folder, "taxonomy.xml"), "python")
+    params["list path, taxonomy information"] = taxonomy_xml(db, os.path.join(folder, "taxonomy.xml"), "python")
     params["protein, taxon"] = "python"
-    params["output, path"] = os.path.join(folder, "output.xml")
     inp = inputxml(os.path.join(folder, "input.xml"), params)
+
+    namestub = os.path.split(spectra)[1].rsplit('.', 1)[0]
+    txml_basename = namestub + '.t.xml'
+    txml = os.path.join(folder, txml_basename)
+    hashing = params.get("output, path hashing", "no").lower() == "yes"
+    if not hashing:
+        logging.debug("Name hashing disabled.")
+        if "output, path" in params:
+            txml = params["output, path"]
+            logging.debug("Using output name from params: %s", txml)
+        else:
+            logging.debug("Setting output path to %s", txml)
+    else:
+        logging.debug("Output path hashing is enabled.")
+
+    if not overwrite:
+        txml = get_free_name(txml)
+    params["output, path"] = txml
+
     logging.debug("Using the following parameters:")
     with open(inp) as fi:
         for line in fi:
@@ -84,23 +121,17 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
             logging.error('Search failed for file %s (exit code %s)', spectra, code)
             return code
         logging.info("Collecting results...")
-        outs = glob(os.path.join(folder, "output*t.xml"))
-        out = [os.path.split(f)[1] for f in outs]
-        out.sort()
-        namestub = os.path.split(spectra)[1].rsplit('.', 1)[0]
-        txml_name =  namestub + '.t.xml'
-        txml = os.path.join(folder, txml_name)
-        if not overwrite:
-            i = 1
-            while os.path.isfile(txml):
-                txml = os.path.join(folder, '{}_{}.t.xml'.format(namestub, i))
-                i += 1
-        move(os.path.join(folder, out[-1]), txml)
+        if hashing:
+            outs = glob(os.path.join(folder, "*.t.xml"))
+            out = max(outs)
+            if not hashing:
+                txml = get_free_name(out)
+            logging.debug('Moving %s to %s', out, txml)
+            move(out, txml)
         if convert:
             logging.info("Converting results...")
             pepxml_file = txml.rsplit('.t.xml', 1)[0] + '.pep.xml'
-            if not subprocess.call([tandem2xml, txml, pepxml_file],
-                    stderr=tandemout, stdout=tandemout):
+            if not subprocess.call([tandem2xml, txml, pepxml_file], stderr=tandemout, stdout=tandemout):
                 logging.info("Task finished. The results are at {}.".format(pepxml_file))
                 return pepxml_file
             else:
@@ -109,6 +140,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
         else:
             logging.info("Task finished. The results are at {}.".format(txml))
             return txml
+
 
 def build_dict(xml):
     params = {}
@@ -119,17 +151,16 @@ def build_dict(xml):
                 params[note.attrib["label"]] = ''
             else:
                 params[note.attrib["label"]] = note.text
-    if "list path, default parameters" in params:
-        del params["list path, default parameters"]
+    params.pop("list path, default parameters", None)
     return params
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help='XML file with search parameters')
     parser.add_argument('dir', help='Directory to store the results')
     parser.add_argument('db', help='FASTA database for search')
-    parser.add_argument('spectra', nargs='*',
-            help='Any number of data files to search')
+    parser.add_argument('spectra', nargs='*', help='Any number of data files to search')
     parser.add_argument('--noconvert', dest='convert', action='store_false',
             help='Do not convert results to pepXML')
     parser.add_argument('--overwrite', action='store_true',
@@ -163,5 +194,4 @@ def main():
         logging.error("Could not find the database: %s" % args.db)
         sys.exit(1)
 
-    runtandem(args.dir, args.input, args.db, spectra,
-                args.convert, args.overwrite, tandem, tandem2xml)
+    runtandem(args.dir, args.input, args.db, spectra, args.convert, args.overwrite, tandem, tandem2xml)
