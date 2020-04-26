@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="pepXML_std.xsl"?>
-<msms_pipeline_analysis date="{{ parameters['performance parameters']['process, start time'] }}" summary_xml="{{ path_to_output }}" xmlns="http://regis-web.systemsbiology.net/pepXML" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://sashimi.sourceforge.net/schema_revision/pepXML/pepXML_v117.xsd">
+<msms_pipeline_analysis date="{{ parameters['performance parameters']['process, start time'] }}" summary_xml="{{ path_to_output }}" xmlns="http://regis-web.systemsbiology.net/pepXML" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://sashimi.sourceforge.net/schema_revision/pepXML/pepXML_v122.xsd">
    <msms_run_summary base_name="{{ path_to_file }}" search_engine="X! Tandem" raw_data_type="raw" raw_data=".?">
    {%- for protease in proteases %}
       <sample_enzyme name="{{ protease.name }}">
@@ -35,7 +35,7 @@
       <search_result>
           <search_hit hit_rank="{{ psm.hit_rank }}" peptide="{{ psm.sequence }}" peptide_prev_aa="{{ psm.peptide_prev_aa }}" peptide_next_aa="{{ psm.peptide_next_aa }}" protein="{{ psm.protein }}" protein_descr="{{ psm.protein_descr }}" num_tot_proteins="{{ psm.num_tot_proteins }}" num_matched_ions="{{ psm.num_matched_ions }}" tot_num_ions="{{ psm.tot_num_ions }}" calc_neutral_pep_mass="{{ '{:.6f}'.format(psm.calc_neutral_mass) }}" massdiff="{{ '{:.6f}'.format(psm.massdiff) }}" num_tol_term="{{ psm.num_tol_term }}" num_missed_cleavages="{{ psm.num_missed_cleavages }}" is_rejected="0">
          {%- for protein in psm.alternative_proteins %}
-            <alternative_protein protein="{{ protein.dbname }}" protein_descr="{{ protein.descr }}" num_tol_term="{{ protein.num_tol_term }}"/>
+            <alternative_protein protein="{{ protein.dbname }}" protein_descr="{{ protein.descr }}" num_tol_term="{{ protein.num_tol_term }}" peptide_prev_aa="{{ protein.peptide_prev_aa }}" peptide_next_aa="{{ protein.peptide_next_aa }}"/>
          {%- endfor %}
          {%- if psm.modifications or psm.mod_label_n or psm.mod_label_c %}
             <modification_info{{ psm.mod_label|safe }}>
