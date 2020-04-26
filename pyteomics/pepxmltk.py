@@ -117,10 +117,8 @@ class Psm:
         self.precursor_neutral_mass = psm_tandem['mh'] - mass.calculate_mass('H+')
         self.assumed_charge = psm_tandem['z']
         self.sequence = psm_tandem['protein'][0]['peptide']['seq']
-        self.peptide_prev_aa = psm_tandem['protein'][0]['peptide']['pre'][-1]
-        self.peptide_prev_aa.replace('[', '-')
-        self.peptide_next_aa = psm_tandem['protein'][0]['peptide']['post'][0]
-        self.peptide_next_aa.replace(']', '-')
+        self.peptide_prev_aa = psm_tandem['protein'][0]['peptide']['pre'][-1].replace('[', '-')
+        self.peptide_next_aa = psm_tandem['protein'][0]['peptide']['post'][0].replace(']', '-')
         self.protein, self.protein_descr = self.get_protein_info(
                 psm_tandem['protein'][0]['note'])
         self.num_tot_proteins = len(psm_tandem['protein'])
@@ -140,9 +138,10 @@ class Psm:
         self.alternative_proteins = []
         for prot in psm_tandem['protein'][1:]:
             alt_protein = {}
-            alt_protein['dbname'], alt_protein['descr'] = self.get_protein_info(
-                    prot['note'])
+            alt_protein['dbname'], alt_protein['descr'] = self.get_protein_info(prot['note'])
             alt_protein['num_tol_term'] = self.calc_num_tol_term(proteases)
+            alt_protein['peptide_prev_aa'] = prot['peptide']['pre'][-1].replace('[', '-')
+            alt_protein['peptide_next_aa'] = prot['peptide']['post'][0].replace(']', '-')
             self.alternative_proteins.append(alt_protein)
         self.modifications = []
         self.mod_label_n = ''
@@ -324,6 +323,7 @@ def convert(files, path_to_output, fdr=None):
     elif len(input_files) > 1:
         easy_write_pepxml(input_files, path_to_output, None)
 
+
 def write(**template_vars):
     templateloader = jinja2.PackageLoader('pyteomics.pepxmltk')
     templateenv = jinja2.Environment(loader=templateloader, autoescape=True,
@@ -333,6 +333,7 @@ def write(**template_vars):
 
     with open(template_vars['path_to_output'], 'w') as output:
         output.write(template.render(template_vars))
+
 
 def main():
     parser = argparse.ArgumentParser(
