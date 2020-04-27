@@ -89,6 +89,8 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
         params["output, parameters"] = "yes"
         params["output, proteins"] = "yes"
         params["output, performance"] = "yes"
+        params.setdefault("protein, cleavage N-terminal mass change", "1.00794")
+        params.setdefault("protein, cleavage C-terminal mass change", "17.00305")
 
     namestub = os.path.split(spectra)[1].rsplit('.', 1)[0]
     txml_basename = namestub + '.t.xml'
