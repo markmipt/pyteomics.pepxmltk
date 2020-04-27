@@ -87,7 +87,10 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
         os.makedirs(folder)
     params["list path, taxonomy information"] = taxonomy_xml(db, os.path.join(folder, "taxonomy.xml"), "python")
     params["protein, taxon"] = "python"
-
+    if convert:
+        params["output, parameters"] = "yes"
+        params["output, proteins"] = "yes"
+        params["output, performance"] = "yes"
 
     namestub = os.path.split(spectra)[1].rsplit('.', 1)[0]
     txml_basename = namestub + '.t.xml'
