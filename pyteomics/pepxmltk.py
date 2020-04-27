@@ -3,10 +3,12 @@ from pyteomics import tandem, parser, mass, pepxml, xml
 from copy import copy
 from collections import OrderedDict
 import jinja2
-from os import path
+import os
 from lxml import etree
 import argparse
 from xml.sax import saxutils
+import logging
+import shutil
 
 
 class Modifications:
@@ -281,50 +283,45 @@ def easy_write_pepxml(input_files, path_to_output, valid_psms=None):
                 if '</spectrum_query>' in line:
                     unlocked = (i == n-1)
 
-def is_tandem_xml(fname):
-    _, elem = next(etree.iterparse(fname))
-    return xml._local_name(elem) == 'bioml'
-
 
 def convert(files, path_to_output, fdr=None):
-    if is_tandem_xml(files[0]):
-        for idx, path_to_file in enumerate(files):
-            if idx == 0:
-                path_to_file = path.abspath(path_to_file)
-                path_to_output = path.abspath(path_to_output)
-                parameters = dict()
-                for _, elem in etree.iterparse(path_to_file, tag='group'):
-                    if elem.attrib['type'] == 'parameters':
-                        parameters[elem.attrib['label']] = OrderedDict(
-                            sorted((sub.attrib['label'], getattr(sub.text, 'strip', lambda: '')())
-                                for sub in elem.iterchildren()))
-                    elem.clear()
-                proteases = [Protease(rule) for rule in
-                        parameters['input parameters']['protein, cleavage site'].split(',')]
-                modifications = Modifications(parameters['input parameters'])
+    path_to_file = os.path.abspath(files[0])
+    path_to_output = os.path.abspath(path_to_output)
+    parameters = dict()
+    for _, elem in etree.iterparse(path_to_file, tag='group'):
+        if elem.attrib['type'] == 'parameters':
+            parameters[elem.attrib['label']] = OrderedDict(
+                sorted((sub.attrib['label'], getattr(sub.text, 'strip', lambda: '')())
+                    for sub in elem.iterchildren()))
+        elem.clear()
+    proteases = [Protease(rule) for rule in
+            parameters['input parameters']['protein, cleavage site'].split(',')]
+    modifications = Modifications(parameters['input parameters'])
 
-        templatevars = {'parameters': parameters,
-                        'proteases': proteases,
-                        'path_to_file': path_to_file,
-                        'path_to_output': path_to_output,
-                        'modifications': [m for m in modifications.modifications
-                            if m['aminoacid']],
-                        'term_modifications': [m for m in
-                            modifications.modifications if not m['aminoacid']],
-                        'psms': (Psm(psm_tandem, proteases, modifications)
-                            for path_to_file in files for psm_tandem in tandem.read(path_to_file))
-        }
-        write(**templatevars)
-        input_files = (path_to_output, )
-    else:
-        input_files = files
+    templatevars = {'parameters': parameters,
+                    'proteases': proteases,
+                    'path_to_file': path_to_file,
+                    'path_to_output': path_to_output,
+                    'modifications': [m for m in modifications.modifications if m['aminoacid']],
+                    'term_modifications': [m for m in modifications.modifications if not m['aminoacid']],
+                    'psms': (Psm(psm_tandem, proteases, modifications)
+                        for path_to_file in files for psm_tandem in tandem.read(path_to_file))
+    }
+    write(**templatevars)
     if fdr:
+        merge_pepxml([path_to_output], path_to_output, fdr)
+
+
+def merge_pepxml(input_files, path_to_output, fdr=None):
+    if fdr:
+        logging.info('Applying FDR %.1%.', fdr)
         psms = set()
         for infile in input_files:
             f = pepxml.filter(infile, fdr=fdr)
             psms.update(psm['spectrum'] for psm in f)
         easy_write_pepxml(input_files, path_to_output, psms)
-    elif len(input_files) > 1:
+    else:
+        logging.info('Merging files into %s.', path_to_output)
         easy_write_pepxml(input_files, path_to_output, None)
 
 
@@ -365,20 +362,49 @@ def main():
 
     ''',
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('files', nargs='+', help='list of pepXML or tXML files')
+    files = parser.add_mutually_exclusive_group(required=True)
+    files.add_argument('files', nargs='*', help='list of X!Tandem XML files', metavar='FILE', default=[])
+    files.add_argument('--pepxml', nargs='+', help='list of pepXML files', metavar='FILE')
     parser.add_argument('-o', '--out', help='path to output file')
     parser.add_argument('-f', '--fdr', default=None, help='FDR, %% (only works with pepXML input files)')
+    parser.add_argument('-v', '--verbosity', action='count', default=0, help='Increase output verbosity')
     args = parser.parse_args()
+    levels = [logging.ERROR, logging.INFO, logging.DEBUG]
+    level = 2 if args.verbosity > 2 else args.verbosity
+    logging.basicConfig(format='%(levelname)5s: %(asctime)s %(message)s',
+            datefmt='[%H:%M:%S]', level=levels[level])
 
     fdr = args.fdr
     if fdr:
         fdr = float(fdr) / 100
-    if args.out:
-        convert(args.files, path.abspath(args.out), fdr=fdr)
-    elif not any(path.splitext(path.splitext(filename)[0])[-1] == '.pep'
-            for filename in args.files):
-        for filename in args.files:
-            convert((path.abspath(filename), ),
-                    path.abspath(filename).split('.t.xml')[0] + '.pep.xml', fdr=fdr)
-    else:
-        convert(args.files[:-1], path.abspath(args.files[-1]), fdr=fdr)
+
+    if args.pepxml:
+        logging.debug('Processing pepXML: %s', args.pepxml)
+        if args.out:
+            out = args.out
+            infiles = args.pepxml
+        else:
+            out = args.pepxml[-1]
+            infiles = args.pepxml[:-1]
+        if not infiles:
+            logging.info('Nothing to do.')
+            sys.exit(0)
+        elif len(infiles) == 1 and not fdr:
+                logging.info('Copying %s to %s', infiles[0], out)
+                shutil.copy(infiles[0], out)
+        else:
+            merge_pepxml(infiles, out, fdr)
+
+    elif args.files:
+        logging.debug('Processing files: %s', args.files)
+        if args.out:
+            convert(args.files, args.out)
+        elif len(args.files) == 2:
+            logging.info('Converting %s to %s.', *args.files)
+            convert([args.files[0]], args.files[1], fdr)
+        else:
+            for f in args.files:
+                out = os.path.splitext(f)[0] + ".pep.xml"
+                logging.info('Converting %s to %s.', f, out)
+                convert(f, out, fdr)
+    logging.info('Done.')
