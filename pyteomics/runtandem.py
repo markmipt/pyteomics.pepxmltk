@@ -1,8 +1,6 @@
 from lxml import etree
 import os
 import sys
-from glob import glob
-from shutil import move
 import subprocess
 import logging
 import argparse
@@ -83,8 +81,11 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
     if not os.path.isdir(folder):
         logging.info("Creating %s..." % folder)
         os.makedirs(folder)
-    params["list path, taxonomy information"] = taxonomy_xml(db, os.path.join(folder, "taxonomy.xml"), "python")
-    params["protein, taxon"] = "python"
+    if db:
+        params["list path, taxonomy information"] = taxonomy_xml(db, os.path.join(folder, "taxonomy.xml"), "python")
+        params["protein, taxon"] = "python"
+    else:
+        logging.info('Database not provided, using input parameters.')
     if convert:
         params["output, parameters"] = "yes"
         params["output, proteins"] = "yes"
@@ -95,17 +96,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
     namestub = os.path.split(spectra)[1].rsplit('.', 1)[0]
     txml_basename = namestub + '.t.xml'
     txml = os.path.join(folder, txml_basename)
-    hashing = params.get("output, path hashing", "no").lower() == "yes"
-    if not hashing:
-        logging.debug("Name hashing disabled.")
-        if "output, path" in params:
-            txml = params["output, path"]
-            logging.debug("Using output name from params: %s", txml)
-        else:
-            logging.debug("Setting output path to %s", txml)
-    else:
-        logging.debug("Output path hashing is enabled.")
-
+    params["output, path hashing"] = "no"
     if not overwrite:
         txml = get_free_name(txml)
     params["output, path"] = txml
@@ -124,13 +115,7 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
             logging.error('Search failed for file %s (exit code %s)', spectra, code)
             return code
         logging.info("Collecting results...")
-        if hashing:
-            outs = glob(os.path.join(folder, "*.t.xml"))
-            out = max(outs)
-            if not hashing:
-                txml = get_free_name(out)
-            logging.debug('Moving %s to %s', out, txml)
-            move(out, txml)
+
         if convert:
             logging.info("Converting results...")
             base, ext = os.path.splitext(txml)
@@ -167,9 +152,11 @@ def build_dict(xml):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('input', help='XML file with search parameters')
-    parser.add_argument('dir', help='Directory to store the results')
-    parser.add_argument('db', help='FASTA database for search')
+    parser.add_argument('-i', '--input', help='XML file with search parameters', required=True)
+    parser.add_argument('-o', '--dir', help='Directory to store the results. Defaults to current directory.')
+    parser.add_argument('-db', '--fasta', help='FASTA database for search. If given, '
+        'taxonomy file will be generated and added to parameters. If omitted, taxonomy must be correctly set '
+        'in the input parameters.')
     parser.add_argument('spectra', nargs='*', help='Any number of data files to search')
     parser.add_argument('--noconvert', dest='convert', action='store_false',
             help='Do not convert results to pepXML')
@@ -193,12 +180,13 @@ def main():
     tandem = args.tandem or _tandem
     tandem2xml = args.tandem2xml or _tandem2xml
     if tandem is None:
-        logging.error("X!Tandem executable not specified. "
-                "Use --tandem.exe or set the TANDEMEXE variable")
+        logging.error("X!Tandem executable not specified. Use --tandem.exe or set the TANDEMEXE variable")
         sys.exit(2)
 
-    if args.db is not None and not os.path.exists(args.db):
-        logging.error("Could not find the database: %s" % args.db)
+    if args.fasta is not None and not os.path.exists(args.fasta):
+        logging.error("Could not find the database: %s" % args.fasta)
         sys.exit(1)
 
-    runtandem(args.dir, args.input, args.db, spectra, args.convert, args.overwrite, tandem, tandem2xml)
+    directory = args.dir or os.getcwd()
+
+    runtandem(directory, args.input, args.fasta, spectra, args.convert, args.overwrite, tandem, tandem2xml)
