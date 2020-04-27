@@ -6,6 +6,7 @@ from shutil import move
 import subprocess
 import logging
 import argparse
+from . import pepxmltk
 
 _tandem = os.environ.get('TANDEMEXE')
 _tandem2xml = os.environ.get('TANDEM2XML')
@@ -54,9 +55,6 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
         tandem=_tandem, tandem2xml=_tandem2xml):
     if tandem is None:
         logging.error('TANDEM executable not set')
-        return
-    if convert and tandem2xml is None:
-        logging.error('TANDEM2XML executable not set')
         return
 
     if isinstance(params, str):
@@ -135,12 +133,18 @@ def runtandem(folder, params, db, spectra=None, convert=True, overwrite=False,
             logging.info("Converting results...")
             base, ext = os.path.splitext(txml)
             pepxml_file = base.rsplit('.t', 1)[0] + '.pep.xml'
-            if not subprocess.call([tandem2xml, txml, pepxml_file], stderr=tandemout, stdout=tandemout):
+            if tandem2xml:
+                if not subprocess.call([tandem2xml, txml, pepxml_file], stderr=tandemout, stdout=tandemout):
+                    logging.info("Task finished. The results are at {}.".format(pepxml_file))
+                    return pepxml_file
+                else:
+                    logging.error("Conversion failed for file %s", spectra)
+                    return txml
+            else:
+                logging.info('Using pepxmltk for result conversion.')
+                pepxmltk.convert([txml], pepxml_file)
                 logging.info("Task finished. The results are at {}.".format(pepxml_file))
                 return pepxml_file
-            else:
-                logging.error("Conversion failed for file %s", spectra)
-                return txml
         else:
             logging.info("Task finished. The results are at {}.".format(txml))
             return txml
@@ -190,10 +194,7 @@ def main():
         logging.error("X!Tandem executable not specified. "
                 "Use --tandem.exe or set the TANDEMEXE variable")
         sys.exit(2)
-    if args.convert and tandem2xml is None:
-        logging.error("Tandem2XML command or executable not specified. "
-                "Use --tandem2xml or set the TANDEM2XML variable")
-        sys.exit(2)
+
     if args.db is not None and not os.path.exists(args.db):
         logging.error("Could not find the database: %s" % args.db)
         sys.exit(1)
