@@ -12,7 +12,7 @@ setup(
     name                 = 'pyteomics.pepxmltk',
     version              = version,
     description          = '''A utility for creation of pepXML files from Python objects and TandemXML files.''',
-    long_description     = (''.join(open('README').readlines())),
+    long_description     = (''.join(open('README.md').readlines())),
     author               = 'Mark Ivanov & Lev Levitsky',
     author_email         = 'pyteomics@googlegroups.com',
     url                  = 'http://hg.theorchromo.ru/pyteomics',
