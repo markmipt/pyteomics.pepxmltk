@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from pyteomics import tandem, parser, mass, pepxml, xml
+from pyteomics import tandem, parser, mass, pepxml
 from copy import copy
 from collections import OrderedDict
 import jinja2
@@ -9,6 +9,7 @@ import argparse
 from xml.sax import saxutils
 import logging
 import shutil
+import sys
 
 
 class Modifications:
@@ -16,10 +17,8 @@ class Modifications:
         self.modifications = []
         self.std_aa_mass = copy(mass.std_aa_mass)
         self.variable_mods = []
-        self.std_aa_mass['N_term'] = float(
-                input_parameters['protein, cleavage N-terminal mass change'])
-        self.std_aa_mass['C_term'] = float(
-                input_parameters['protein, cleavage C-terminal mass change'])
+        self.std_aa_mass['N_term'] = float(input_parameters['protein, cleavage N-terminal mass change'])
+        self.std_aa_mass['C_term'] = float(input_parameters['protein, cleavage C-terminal mass change'])
         self.get_modifications_from_params(input_parameters)
         self.info_about_xtandem_term_modifications()
         self.sort_modifications()
@@ -44,19 +43,16 @@ class Modifications:
         return modification
 
     def get_modifications_from_params(self, input_parameters):
-        for mod in set(input_parameters.get(
-            'residue, potential modification mass', ',').split(',')
-                + (input_parameters.get(
-                    'refine, potential modification mass', '').split(',')
-                   if input_parameters.get('refine', 'no') == 'yes' else [])
-                + (['42.010565@['] if input_parameters.get(
-                    'protein, quick acetyl', 'yes') == 'yes' else [])):
+        for mod in set(
+                input_parameters.get('residue, potential modification mass', ',').split(',')
+                    + (input_parameters.get('refine, potential modification mass', '').split(',')
+                        if input_parameters.get('refine', 'no') == 'yes' else [])
+                    + (['42.010565@['] if input_parameters.get('protein, quick acetyl', 'yes') == 'yes' else [])):
             if mod:
                 self.modifications.append(self.get_modification_dict(mod, True))
-        for mod in set(input_parameters.get(
-            'residue, modification mass', ',').split(',')
-                + (input_parameters.get(
-                    'refine, modification mass', '').split(',')
+        for mod in set(
+                input_parameters.get('residue, modification mass', ',').split(',')
+                + (input_parameters.get('refine, modification mass', '').split(',')
                    if input_parameters.get('refine', 'no') == 'yes' else [])):
             if mod:
                 self.modifications.append(self.get_modification_dict(mod, False))
@@ -73,23 +69,18 @@ class Modifications:
         for modification in self.modifications:
             if not modification['variable']:
                 if modification['aminoacid']:
-                    self.std_aa_mass[modification['aminoacid']
-                            ] += modification['massdiff']
+                    self.std_aa_mass[modification['aminoacid']] += modification['massdiff']
             else:
                 break
 
     def calculate_modification_masses(self):
         for modification in self.modifications:
             if modification['aminoacid']:
-                modification['mass'] = (
-                        self.std_aa_mass[modification['aminoacid']]
-                        + (modification['massdiff']
-                            if modification['variable'] else 0))
+                modification['mass'] = (self.std_aa_mass[modification['aminoacid']]
+                        + (modification['massdiff'] if modification['variable'] else 0))
             else:
-                modification['mass'] = (
-                        self.std_aa_mass['%s_term' % modification['terminus']]
-                        + (modification['massdiff']
-                            if modification['variable'] else 0))
+                modification['mass'] = (self.std_aa_mass['%s_term' % modification['terminus']]
+                        + (modification['massdiff'] if modification['variable'] else 0))
 
     def info_about_xtandem_term_modifications(self):
         xtandem_nterm_default = ['-17.0265@C', '-18.0106@E', '-17.0265@Q']
@@ -107,8 +98,7 @@ class Modifications:
 
 class Psm:
     def __init__(self, psm_tandem, proteases, mods):
-        self.spectrum = psm_tandem['support']['fragment ion mass spectrum'
-                ]['note'].replace('\n', '')
+        self.spectrum = psm_tandem['support']['fragment ion mass spectrum']['note'].replace('\n', '')
         try:
             self.rt = float(psm_tandem['rt'])
         except (KeyError, TypeError):
@@ -121,17 +111,13 @@ class Psm:
         self.sequence = psm_tandem['protein'][0]['peptide']['seq']
         self.peptide_prev_aa = psm_tandem['protein'][0]['peptide']['pre'][-1].replace('[', '-')
         self.peptide_next_aa = psm_tandem['protein'][0]['peptide']['post'][0].replace(']', '-')
-        self.protein, self.protein_descr = self.get_protein_info(
-                psm_tandem['protein'][0]['note'])
+        self.protein, self.protein_descr = self.get_protein_info(psm_tandem['protein'][0]['note'])
         self.num_tot_proteins = len(psm_tandem['protein'])
-        self.num_matched_ions = sum(
-                v for k, v in psm_tandem['protein'][0]['peptide'].items()
-                if '_ions' in k)
+        self.num_matched_ions = sum(v for k, v in psm_tandem['protein'][0]['peptide'].items() if '_ions' in k)
         self.tot_num_ions = (len(self.sequence) - 1) * sum(
                 1 for k in psm_tandem['protein'][0]['peptide'] if '_ions' in k
                 ) * max(self.assumed_charge - 1, 1)
-        self.calc_neutral_mass = (psm_tandem['protein'][0]['peptide']['mh'] -
-                mass.calculate_mass('H+'))
+        self.calc_neutral_mass = (psm_tandem['protein'][0]['peptide']['mh'] - mass.calculate_mass('H+'))
         self.massdiff = self.precursor_neutral_mass - self.calc_neutral_mass
         self.num_tol_term = self.calc_num_tol_term(proteases)
         self.num_missed_cleavages = psm_tandem['protein'][0][
@@ -172,7 +158,6 @@ class Psm:
         for k, v in self.scores.copy().items():
             self.scores[k.replace('_', '')] = self.scores.pop(k)
 
-
     def get_modification_info(self, modification, mods):
         position = modification['at'] - self.start + 1
         aa = self.sequence[position - 1]
@@ -189,19 +174,16 @@ class Psm:
                     self.mod_label_c = ' mod_cterm_mass="%s"' % (m['mass'])
                     flag = 0
         if flag:
-            return {'position': position,
-                    'mass': mass.std_aa_mass[aa] + modification['modified']}
+            return {'position': position, 'mass': mass.std_aa_mass[aa] + modification['modified']}
         else:
             return None
 
     def calc_num_tol_term(self, proteases):
         num_tol_term = 0
-        if any(self.sequence[-1] in protease.cut and
-                self.peptide_next_aa not in protease.no_cut
+        if any(self.sequence[-1] in protease.cut and self.peptide_next_aa not in protease.no_cut
                for protease in proteases):
             num_tol_term += 1
-        if any(self.sequence[0] not in protease.no_cut and
-                self.peptide_prev_aa in protease.cut
+        if any(self.sequence[0] not in protease.no_cut and self.peptide_prev_aa in protease.cut
                for protease in proteases):
             num_tol_term += 1
         return num_tol_term
@@ -281,7 +263,7 @@ def easy_write_pepxml(input_files, path_to_output, valid_psms=None):
                 if unlocked:
                     output_file.write(line)
                 if '</spectrum_query>' in line:
-                    unlocked = (i == n-1)
+                    unlocked = (i == n - 1)
 
 
 def convert(files, path_to_output, fdr=None):
@@ -298,14 +280,15 @@ def convert(files, path_to_output, fdr=None):
             parameters['input parameters']['protein, cleavage site'].split(',')]
     modifications = Modifications(parameters['input parameters'])
 
-    templatevars = {'parameters': parameters,
-                    'proteases': proteases,
-                    'path_to_file': path_to_file,
-                    'path_to_output': path_to_output,
-                    'modifications': [m for m in modifications.modifications if m['aminoacid']],
-                    'term_modifications': [m for m in modifications.modifications if not m['aminoacid']],
-                    'psms': (Psm(psm_tandem, proteases, modifications)
-                        for path_to_file in files for psm_tandem in tandem.read(path_to_file))
+    templatevars = {
+        'parameters': parameters,
+        'proteases': proteases,
+        'path_to_file': path_to_file,
+        'path_to_output': path_to_output,
+        'modifications': [m for m in modifications.modifications if m['aminoacid']],
+        'term_modifications': [m for m in modifications.modifications if not m['aminoacid']],
+        'psms': (Psm(psm_tandem, proteases, modifications)
+            for path_to_file in files for psm_tandem in tandem.read(path_to_file))
     }
     write(**templatevars)
     if fdr:
@@ -327,8 +310,7 @@ def merge_pepxml(input_files, path_to_output, fdr=None):
 
 def write(**template_vars):
     templateloader = jinja2.PackageLoader('pyteomics.pepxmltk')
-    templateenv = jinja2.Environment(loader=templateloader, autoescape=True,
-            extensions=['jinja2.ext.autoescape'])
+    templateenv = jinja2.Environment(loader=templateloader, autoescape=True, extensions=['jinja2.ext.autoescape'])
     template_file = "template.jinja"
     template = templateenv.get_template(template_file)
 
@@ -390,8 +372,8 @@ def main():
             logging.info('Nothing to do.')
             sys.exit(0)
         elif len(infiles) == 1 and not fdr:
-                logging.info('Copying %s to %s', infiles[0], out)
-                shutil.copy(infiles[0], out)
+            logging.info('Copying %s to %s', infiles[0], out)
+            shutil.copy(infiles[0], out)
         else:
             merge_pepxml(infiles, out, fdr)
 
