@@ -101,7 +101,7 @@ class Psm:
         self.spectrum = psm_tandem['support']['fragment ion mass spectrum']['note'].replace('\n', '')
         try:
             self.rt = float(psm_tandem['rt'])
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, ValueError):
             self.rt = None
         self.hit_rank = 1
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
