@@ -309,7 +309,7 @@ def merge_pepxml(input_files, path_to_output, fdr=None):
 
 
 def write(**template_vars):
-    templateloader = jinja2.PackageLoader('pyteomics.pepxmltk')
+    templateloader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
     templateenv = jinja2.Environment(loader=templateloader, autoescape=True, extensions=['jinja2.ext.autoescape'])
     template_file = "template.jinja"
     template = templateenv.get_template(template_file)
