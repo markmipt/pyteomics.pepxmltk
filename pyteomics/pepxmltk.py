@@ -98,7 +98,11 @@ class Modifications:
 
 class Psm:
     def __init__(self, psm_tandem, proteases, mods):
-        self.spectrum = psm_tandem['support']['fragment ion mass spectrum']['note'].replace('\n', '')
+        fims = psm_tandem['support']['fragment ion mass spectrum']
+        try:
+            self.spectrum = fims['note'].replace('\n', '')
+        except KeyError:
+            self.spectrum = fims['id']
         try:
             self.rt = float(psm_tandem['rt'])
         except (KeyError, TypeError, ValueError):
@@ -106,7 +110,7 @@ class Psm:
         self.hit_rank = 1
         self.start_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
         self.end_scan = psm_tandem['support']['fragment ion mass spectrum']['id']
-        self.precursor_neutral_mass = psm_tandem['mh'] - mass.calculate_mass('H+')
+        self.precursor_neutral_mass = psm_tandem['mh'] - mass.nist_mass['H+'][0][0]
         self.assumed_charge = psm_tandem['z']
         self.sequence = psm_tandem['protein'][0]['peptide']['seq']
         self.peptide_prev_aa = psm_tandem['protein'][0]['peptide']['pre'][-1].replace('[', '-')
@@ -117,7 +121,7 @@ class Psm:
         self.tot_num_ions = (len(self.sequence) - 1) * sum(
                 1 for k in psm_tandem['protein'][0]['peptide'] if '_ions' in k
                 ) * max(self.assumed_charge - 1, 1)
-        self.calc_neutral_mass = (psm_tandem['protein'][0]['peptide']['mh'] - mass.calculate_mass('H+'))
+        self.calc_neutral_mass = (psm_tandem['protein'][0]['peptide']['mh'] - mass.nist_mass['H+'][0][0])
         self.massdiff = self.precursor_neutral_mass - self.calc_neutral_mass
         self.num_tol_term = self.calc_num_tol_term(proteases)
         self.num_missed_cleavages = psm_tandem['protein'][0][
@@ -310,7 +314,7 @@ def merge_pepxml(input_files, path_to_output, fdr=None):
 
 def write(**template_vars):
     templateloader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
-    templateenv = jinja2.Environment(loader=templateloader, autoescape=True, extensions=['jinja2.ext.autoescape'])
+    templateenv = jinja2.Environment(loader=templateloader, autoescape=True)
     template_file = "template.jinja"
     template = templateenv.get_template(template_file)
 
